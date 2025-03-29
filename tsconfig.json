@@ -34,7 +34,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "components/ui/joditEditor.js"  ],
   "exclude": [
     "node_modules"
   ]
