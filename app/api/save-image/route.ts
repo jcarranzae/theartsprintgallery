@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const { data: storageData, error: storageError } = await supabase.storage
       .from(bucket)
       .upload(dir, buffer, {
-        contentType: 'image/jpeg',
+        //contentType: 'image/jpeg',
         upsert: false,
       });
 

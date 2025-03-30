@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import dynamic from 'next/dynamic';
+import joditEditor from '@/components/ui/joditEditor';
+const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -52,7 +55,10 @@ const BlogForm: React.FC<BlogFormProps> = () => {
             </div>
             <div>
                 <label>Content:</label>
-                <textarea value={content} onChange={(e) => setContent(e.target.value)} required />
+                <JoditEditor
+                    value={content}
+                    onChange={(newContent) => setContent(newContent)}
+                />
             </div>
             <div>
                 <label>Publish:</label>
