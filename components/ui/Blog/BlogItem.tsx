@@ -6,8 +6,8 @@ interface Article {
     created_at: string;
     users: {
         id: number;
-        full_name: string;
-        avatar_url: string;
+        name: string;
+       // avatar_url: string;
     }
 }
 
@@ -30,12 +30,12 @@ const BlogItem = ({ article }: { article: Article }) => {
                     <p className="mt-5 pl-2 line-clamp-3 text-sm/6 text-gray-600">{article.short_description}</p>
                 </div>
                 <div className="relative mt-8 flex items-center gap-x-4 pl-4">
-                    <img src= {article.users.avatar_url} className="max-w-12"/>
+                    
                     <div className="text-sm/6 pb-4">
                     <p className="font-semibold text-gray-900">
                         <a href="#">
                         <span className="absolute inset-0"></span>
-                        {article.users.full_name}
+                        {article.users.name}
                         </a>
                     </p>
                     <p className="text-gray-600">Co-Founder / CTO</p>

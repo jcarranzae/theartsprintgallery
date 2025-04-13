@@ -1,53 +1,47 @@
-// app/api/check-image/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const imageId = params.id;
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> } 
+) {
+  //const id = context?.params?.id;
+  const { id } = await context.params;
+
+  if (!id) {
+    return NextResponse.json({ error: 'Falta el ID de la imagen' }, { status: 400 });
+  }
 
   try {
-    const response = await fetch(`https://api.us1.bfl.ai/v1/get_result?id=${imageId}`, {
+    const response = await fetch(`https://api.us1.bfl.ai/v1/get_result?id=${id}`, {
       headers: {
         Accept: 'application/json',
-        'X-Key': process.env.NEXT_PUBLIC_BFL_API_KEY!,
+        'x-key': process.env.NEXT_PUBLIC_BFL_API_KEY || '',
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json(
-        { error: `Error al consultar estado: ${response.status}. ${errorText}` },
-        { status: response.status }
-      );
+      return NextResponse.json({ error: 'API error', details: errorText }, { status: 500 });
     }
 
     const result = await response.json();
 
-    // Si ya está listo
-    if (result.status === 'Ready') {
-      const imageUrl = result.result.sample;
-
-      // Descargar la imagen en base64
-      const imageRes = await fetch(imageUrl);
-      const buffer = await imageRes.arrayBuffer();
+    if (result.status === 'Ready' && result.result?.sample) {
+      const imgRes = await fetch(result.result.sample);
+      const buffer = await imgRes.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
 
       return NextResponse.json({
         completed: true,
         sample: base64,
-        id: imageId,
-        message: 'Proceso completado',
+        id,
       });
     }
 
-    // Aún en proceso
-    return NextResponse.json({
-      completed: false,
-      status: result.status,
-      message: 'Procesando...',
-    }, { status: 202 });
-  } catch (error: any) {
+    return NextResponse.json({ completed: false, id });
+  } catch (err) {
     return NextResponse.json(
-      { error: 'Error en la consulta: ' + error.message },
+      { error: 'Error al obtener imagen', details: (err as Error).message },
       { status: 500 }
     );
   }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Users, Settings, Shield, Activity, Menu, Video, Rss, ImageUpscale } from 'lucide-react';
+import { Users, Settings, Shield, Activity, Menu, Video, Rss, ImageUpscale, ImagePlus, Camera, Music, Scaling, Image as ImageIcon, FolderOpen } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -15,13 +15,14 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
-    { href: '/dashboard', icon: Users, label: 'Team' },
-    { href: '/dashboard/general', icon: Settings, label: 'General' },
-    { href: '/dashboard/activity', icon: Activity, label: 'Activity' },
-    { href: '/dashboard/security', icon: Shield, label: 'Security' },
-    { href: '/dashboard/createVideo', icon: Video, label: 'Create Video' },
-    { href: '/dashboard/blogForm', icon: Rss, label: 'Write blog article' },
-    { href: '/dashboard/tools/fill', icon: ImageUpscale, label: 'Edita tus imágenes' },
+    { href: '/dashboard', icon: Settings, label: 'Panel Principal' },
+    { href: '/dashboard/activity', icon: Activity, label: 'Actividad' },
+    { href: '/dashboard/blogForm', icon: Rss, label: 'Blog' },
+    { href: '/dashboard/video', icon: Video, label: 'Generador de Video' },
+    { href: '/dashboard/image', icon: Camera, label: 'Generador de Imágenes' },
+    { href: '/dashboard/music', icon: Music, label: 'Generador de Música' },
+    { href: '/dashboard/imageScaler', icon: Scaling, label: 'Escalador de Imágenes' },
+    { href: '/dashboard/gallery', icon: FolderOpen, label: 'Galería Multimedia' },
   ];
 
   return (

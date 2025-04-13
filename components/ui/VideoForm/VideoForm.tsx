@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 interface AilmResponse {
   id: string;
@@ -21,6 +22,7 @@ export default function VideoForm() {
   const [ratio, setRatio] = useState<string>('16:9');
   const [model] = useState<string>('kling-video/v1.6/standard/text-to-video');
   const [loading, setLoading] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
 
   // Almacena el ID de la tarea (si lo hay)
   const [taskId, setTaskId] = useState<string>('');
@@ -34,8 +36,9 @@ export default function VideoForm() {
       const response = await fetch("https://api.aimlapi.com/v2/generate/video/kling/generation", {
         method: 'POST',
         headers: {
-          'Authorization': "Bearer " + process.env.NEXT_PUBLIC_AIML_API_KEY,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_AIML_API_KEY}`
         },
         body: JSON.stringify({
           'prompt': prompt,
@@ -86,10 +89,9 @@ export default function VideoForm() {
         const resp = await fetch(`https://api.aimlapi.com/v2/generate/video/kling/generation?generation_id=${id}`, { 
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_AIML_API_KEY}`,
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_AIML_API_KEY}`
           },  
-          //headers={"Authorization":f"Bearer {api_key}"},    
-          //params = {"generation_id": "id"}
         });
         
           //const datos = resp.json()
@@ -118,10 +120,102 @@ export default function VideoForm() {
   };
 
   // Función para manejar el caso en que ya tenemos la URL del video
-  const handleVideoReady = (videoUrl: string) => {
-    // Aquí decides qué hacer con la URL.
-    // Por ejemplo, redirigir a /success?videoUrl=...
-    router.push(`/success?videoUrl=${encodeURIComponent(videoUrl)}`);
+  const handleVideoReady = async (videoUrl: string) => {
+    try {
+      setSaving(true);
+      
+      // Convertir la URL del video a blob
+      const response = await fetch(videoUrl);
+      const blob = await response.blob();
+      
+      // Crear un nombre de archivo seguro
+      const timestamp = new Date().getTime();
+      const safeFileName = `video_${timestamp}.mp4`;
+
+      // Convertir blob a base64
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          const base64Data = base64.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      // 1. Subir el archivo al bucket
+      const buffer = Buffer.from(base64Data, 'base64');
+      const path = `videos/${safeFileName}`;
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('ai-generated-media')
+        .upload(path, buffer, {
+          contentType: 'video/mp4',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el video: ${uploadError.message}`);
+      }
+
+      // 2. Obtener la URL pública
+      const { data: urlData } = supabase.storage
+        .from('ai-generated-media')
+        .getPublicUrl(path);
+
+      if (!urlData?.publicUrl) {
+        throw new Error('No se pudo obtener la URL pública del video');
+      }
+
+      // 3. Insertar en ai_media_assets
+      const { data: assetData, error: assetError } = await supabase
+        .from('ai_media_assets')
+        .insert({
+          bucket_path: path,
+          file_name: safeFileName,
+          file_type: 'video',
+          mime_type: 'video/mp4',
+          size_in_bytes: blob.size,
+          metadata: {
+            duration: Number(duration),
+            aspect_ratio: ratio,
+            prompt: prompt,
+            model: model,
+            aiml_generation_id: taskId,
+            generation_status: 'completed'
+          },
+          user_id: 2 // Temporal, deberías obtener el ID del usuario actual
+        })
+        .select()
+        .single();
+
+      if (assetError || !assetData) {
+        throw new Error(`Error al guardar en ai_media_assets: ${assetError?.message}`);
+      }
+
+      // 4. Insertar en ai_media_asset_relations (nota: el nombre de la tabla también cambió)
+      const { error: relationError } = await supabase
+        .from('ai_media_asset_relations')
+        .insert({
+          media_asset_id: assetData.id,
+          related_table: 'aiml_generations',
+          related_id: 1, // Temporal, deberías tener el ID correcto
+          relation_type: 'generation'
+        });
+
+      if (relationError) {
+        throw new Error(`Error al guardar la relación: ${relationError.message}`);
+      }
+
+      console.log('Video guardado exitosamente:', urlData.publicUrl);
+      router.push(`/success?videoUrl=${encodeURIComponent(urlData.publicUrl)}`);
+    } catch (error) {
+      console.error('Error al guardar el video:', error);
+      alert('Error al guardar el video. Se mostrará el video original.');
+      router.push(`/success?videoUrl=${encodeURIComponent(videoUrl)}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -166,9 +260,9 @@ export default function VideoForm() {
       <button
         type="submit"
         className="w-full py-2 px-4 text-white bg-blue-600 hover:bg-blue-700 rounded"
-        disabled={loading}
+        disabled={loading || saving}
       >
-        {loading ? 'Generando...' : 'Generar Video'}
+        {loading ? 'Generando...' : saving ? 'Guardando...' : 'Generar Video'}
       </button>
 
       {/* Mostrar el ID temporalmente para debug */}

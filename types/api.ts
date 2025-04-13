@@ -68,3 +68,23 @@ export interface ImageResult {
     start_time: number;
   };
 } 
+
+export interface FinetuneRequest {
+  finetune_comment: string;
+  trigger_word: string;
+  file_data: string;
+  iterations: number;
+  mode: 'character' | 'product' | 'style' | 'general';
+  learning_rate: number;
+  captioning: boolean;
+  priority: string;
+  lora_rank: number;
+  finetune_type: 'full' | 'lora';
+}
+
+export interface FinetuneResponse {
+  id: string;
+  status: string;
+  result: any;
+  progress: any;
+} 

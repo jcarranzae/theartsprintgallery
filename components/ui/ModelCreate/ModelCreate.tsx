@@ -129,18 +129,18 @@ export default function Home() {
     setError(null);
     setImageUrl(null);
 
-    console.log('📤 Datos enviados al servidor:', formData);
+    //console.log('📤 Datos enviados al servidor:', formData);
 
     try {
       const response = await imageService.generateImage(formData, selectedModel);
-      console.log('📥 Respuesta inicial de la API:', response);
+      //console.log('📥 Respuesta inicial de la API:', response);
 
       const result = await imageService.pollImageResult(response.id);
-      console.log('🖼️ Resultado final con URL:', result);
+      //console.log('🖼️ Resultado final con URL:', result);
       
       setImageUrl(result.url || null);
     } catch (err) {
-      console.error('❌ Error en la petición:', err);
+      //console.error('❌ Error en la petición:', err);
       setError(err instanceof Error ? err.message : 'Ocurrió un error');
     } finally {
       setLoading(false);
