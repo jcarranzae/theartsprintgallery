@@ -15,14 +15,18 @@ const models = [
 export default function ModelSelector({ value, onChange }: ModelSelectorProps) {
   return (
     <div>
-      <label className="block mb-1 font-medium">Seleccionar modelo</label>
+      <label className="block mb-2 text-lg font-semibold text-fuchsia-400 drop-shadow-md">
+        Seleccionar modelo
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 rounded-lg bg-zinc-900 text-cyan-400 border-2 border-fuchsia-500 focus:ring-2 focus:ring-blue-400 shadow-md outline-none transition-all"
       >
         {models.map((m) => (
-          <option key={m.value} value={m.value}>{m.label}</option>
+          <option key={m.value} value={m.value} className="bg-zinc-800 text-green-400">
+            {m.label}
+          </option>
         ))}
       </select>
     </div>

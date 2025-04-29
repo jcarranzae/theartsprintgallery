@@ -82,18 +82,18 @@ export default function MusicForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div>
+      <form onSubmit={handleSubmit} className="bg-black p-6 rounded-xl shadow-lg max-w-xl mx-auto flex flex-col gap-6 border border-pink-500">
         <div>
-          <label htmlFor="prompt" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="prompt" className="text-lg font-bold text-pink-400">
             Describe la música que quieres generar
           </label>
           <textarea
             id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            rows={4}
+            className="bg-black border-2 border-blue-500 text-green-400 focus:ring-pink-400 rounded-lg p-2"
+            rows={3}
             required
           />
         </div>

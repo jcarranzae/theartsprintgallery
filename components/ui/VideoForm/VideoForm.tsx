@@ -221,35 +221,34 @@ export default function VideoForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block mb-1 font-semibold">Texto / Prompt</label>
-        <input
-          type="text"
+        <label className="block mb-1 text-cyan-300 font-semibold">Texto / Prompt</label>
+        <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
           placeholder="Describe el contenido del video..."
           required
         />
       </div>
 
       <div>
-        <label className="block mb-1 font-semibold">Duration</label>
+        <label className="block mb-1 text-cyan-300 font-semiboldblock mb-1 text-cyan-300 font-semibold">Duration</label>
         <input
           type="number"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
           placeholder="5"
           required
         />
       </div>
 
       <div>
-        <label className="block mb-1 font-semibold">Aspect Ratio</label>
+        <label className="block mb-1 text-cyan-300 font-semiboldblock mb-1 text-cyan-300 font-semibold">Aspect Ratio</label>
         <select
           value={ratio}
           onChange={(e) => setRatio(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
         >
           <option value="16:9">16:9</option>
           <option value="9:16">9:16</option>

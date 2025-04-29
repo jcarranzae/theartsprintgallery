@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const buffer = base64ToBuffer(base64);
     const filename = generateFilename();
     const bucket = process.env.SUPABASE_BUCKET!;
-    const dir = `public/${filename}`;
+    const dir = `images/${filename}`;
 
     // 1. Subir al storage
     const { data: storageData, error: storageError } = await supabase.storage

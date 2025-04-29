@@ -140,7 +140,7 @@ export default function FluxGenerator() {
         {loading ? <Loader2 className="animate-spin" /> : 'Generar Imagen'}
       </button>
 
-      <ImageViewer result={result} />
+      <ImageViewer url={result}/>
     </div>
   );
 }
