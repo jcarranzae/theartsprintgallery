@@ -1,19 +1,36 @@
 'use client';
 
+import React, { ChangeEvent } from 'react';
+
 interface ImageUploaderProps {
-  onChange: (file: File | null) => void;
+  imageFile: File | null;
+  setImageFile: (file: File | null) => void;
 }
 
-export default function ImageUploader({ onChange }: ImageUploaderProps) {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ imageFile, setImageFile }) => {
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+  };
+
   return (
-    <div>
-      <label className="block mb-2 text-lg font-semibold text-pink-400">Imagen</label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => onChange(e.target.files?.[0] || null)}
-        className="block w-full p-2 text-cyan-400 bg-zinc-900 border-2 border-green-400 rounded shadow-lg focus:ring-2 focus:ring-fuchsia-500"
-      />
+    <div className="flex flex-col items-center mt-6">
+      <label className="cursor-pointer bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded-lg shadow-md transition-colors">
+        {imageFile ? 'Cambiar Imagen' : 'Subir Imagen'}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          className="hidden"
+        />
+      </label>
+      {imageFile && (
+        <span className="mt-2 text-sm text-gray-300">
+          {imageFile.name}
+        </span>
+      )}
     </div>
   );
-}
+};
+
+export default ImageUploader;

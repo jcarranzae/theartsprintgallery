@@ -5,7 +5,7 @@ interface AdvancedSettingsProps {
   onToggle: () => void;
   steps: number;
   guidance: number;
-  seed: number;
+  seed: number | null;
   outputFormat: 'jpeg' | 'png';
   promptUpsampling: boolean;
   aspectRatio?: string;
@@ -19,6 +19,7 @@ interface AdvancedSettingsProps {
   showHeight: boolean;
   showRaw?: boolean;
   raw?: boolean;
+  model?: string;
 }
 
 export default function AdvancedSettings({
@@ -40,6 +41,7 @@ export default function AdvancedSettings({
   showHeight,
   showRaw,
   raw,
+  model,
 }: AdvancedSettingsProps) {
   return (
     <div>
@@ -80,8 +82,8 @@ export default function AdvancedSettings({
             <label className="block mb-1 text-cyan-300 font-semibold">Seed</label>
             <input
               type="number"
-              value={seed}
-              onChange={(e) => onChange('seed', Number(e.target.value))}
+              value={seed || ''}
+              onChange={(e) => onChange('seed', Number(e.target.value) || null)}
               className="w-32 px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
             />
           </div>

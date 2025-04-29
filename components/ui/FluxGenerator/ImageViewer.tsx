@@ -1,28 +1,34 @@
 'use client';
 
+import React from 'react';
+
 interface ImageViewerProps {
-  url: string | null;
-  loading?: boolean;
+  imageUrl: string | null;
+  alt?: string;
+  onDownload?: () => void;
 }
 
+const ImageViewer: React.FC<ImageViewerProps> = ({ imageUrl, alt = 'Imagen generada', onDownload }) => {
+  if (!imageUrl) return null;
 
-export default function ImageViewer({ url, loading }: ImageViewerProps) {
   return (
-    <div className="my-6 text-center">
-      {loading && (
-        <div className="mb-3 text-fuchsia-400 animate-pulse">Generando imagen...</div>
+    <div className="flex flex-col items-center mt-6">
+      <img
+        src={imageUrl}
+        alt={alt}
+        className="rounded-lg shadow-lg max-w-full h-auto border-2 border-purple-500"
+        style={{ maxHeight: 512 }}
+      />
+      {onDownload && (
+        <button
+          onClick={onDownload}
+          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white font-semibold rounded-lg transition-colors"
+        >
+          Descargar
+        </button>
       )}
-      {url && (
-        <img
-          src={url}
-          alt="Imagen generada"
-          className="mx-auto rounded-2xl border-4 border-cyan-400 shadow-xl"
-          style={{
-            boxShadow: '0 0 24px 4px #00fff7, 0 0 8px 2px #ff1aff'
-          }}
-        />
-      )}
-      
     </div>
   );
-}
+};
+
+export default ImageViewer;
