@@ -7,16 +7,23 @@ export async function POST(req: NextRequest) {
   try {
     const { base64, prompt, imageId } = await req.json();
 
+    // Obtener la sesión del usuario
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
+    }
+
     const buffer = base64ToBuffer(base64);
     const filename = generateFilename();
-    const bucket = process.env.SUPABASE_BUCKET!;
-    const dir = `images/${filename}`;
+    const bucket = 'ai-generated-media';
+    const path = `images/${filename}`;
 
     // 1. Subir al storage
     const { data: storageData, error: storageError } = await supabase.storage
       .from(bucket)
-      .upload(dir, buffer, {
-        //contentType: 'image/jpeg',
+      .upload(path, buffer, {
+        contentType: 'image/jpeg',
         upsert: false,
       });
 
@@ -25,16 +32,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Obtener URL pública
-    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(filename);
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(path);
     const publicUrl = publicUrlData.publicUrl;
 
     // 3. Guardar en la base de datos
     const { error: dbError } = await supabase.from('images').insert([
       {
         url: publicUrl,
-        prompt,
-        image_id: imageId,
+        prompt: prompt,
         original_name: filename,
+        image_id: imageId,
+        user_id: session.user.id,
+        likes: 0
       },
     ]);
 

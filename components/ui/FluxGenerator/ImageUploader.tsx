@@ -15,7 +15,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ imageFile, setImageFile }
 
   return (
     <div className="flex flex-col items-center mt-6">
-      <label className="cursor-pointer bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded-lg shadow-md transition-colors">
+      <label 
+        className="cursor-pointer bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white px-4 py-2 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] transition-all duration-300 hover:scale-105 shadow-lg"
+        style={{
+          boxShadow: "0 0 16px 3px #8C1AD9",
+          borderRadius: "12px",
+        }}
+      >
         {imageFile ? 'Cambiar Imagen' : 'Subir Imagen'}
         <input
           type="file"
@@ -25,7 +31,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ imageFile, setImageFile }
         />
       </label>
       {imageFile && (
-        <span className="mt-2 text-sm text-gray-300">
+        <span className="mt-2 text-sm text-[#8C1AD9] font-medium">
           {imageFile.name}
         </span>
       )}

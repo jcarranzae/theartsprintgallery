@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import VideoViewer from './VideoViewer';
 
 interface AilmResponse {
   id: string;
@@ -16,23 +15,22 @@ interface AilmResponse {
 }
 
 export default function VideoForm() {
-  const router = useRouter();
   const [prompt, setPrompt] = useState<string>('');
   const [duration, setDuration] = useState<string>('5');
   const [ratio, setRatio] = useState<string>('16:9');
   const [model] = useState<string>('kling-video/v1.6/standard/text-to-video');
   const [loading, setLoading] = useState<boolean>(false);
-  const [saving, setSaving] = useState<boolean>(false);
-
-  // Almacena el ID de la tarea (si lo hay)
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setIsGenerating(true);
+    setVideoUrl(null);
 
     try {
-      // 1) Llamamos al endpoint interno que inicia la generación
       const response = await fetch("https://api.aimlapi.com/v2/generate/video/kling/generation", {
         method: 'POST',
         headers: {
@@ -47,7 +45,6 @@ export default function VideoForm() {
           'model': model,
         }),
       });
-      console.log('response:', response);
 
       if (!response.ok) {
         throw new Error('Error al iniciar la generación del video.');
@@ -60,32 +57,26 @@ export default function VideoForm() {
         throw new Error('No se recibió un ID de la API.');
       }
 
-      // Guardamos el ID en el estado, para pruebas o debug
       setTaskId(id);
 
-      // 2) Si el status devuelto es "queued", comenzamos el polling cada 2s
       if (status === 'queued') {
         pollStatus(id);
-      }
-      // En caso de que ya venga "completed" de inmediato (poco probable),
-      // podemos manejarlo también:
-      else if (status === 'completed' && data.video) {
-        handleVideoReady(data.video.url);
+      } else if (status === 'completed' && data.video) {
+        setVideoUrl(data.video.url);
+        setIsGenerating(false);
       }
     } catch (error) {
       console.error(error);
       alert('Ocurrió un error al generar el video.');
+      setIsGenerating(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Función que consulta el estado con un setInterval
   const pollStatus = (id: string) => {
     const intervalId = setInterval(async () => {
       try {
-        // Llamamos a la API (o tu endpoint) que verifica el estado
-        // Por ejemplo, '/api/getVideoStatus?id=xxx'
         const resp = await fetch(`https://api.aimlapi.com/v2/generate/video/kling/generation?generation_id=${id}`, { 
           method: 'GET',
           headers: {
@@ -94,10 +85,6 @@ export default function VideoForm() {
           },  
         });
         
-          //const datos = resp.json()
-
-
-       // const resp = await fetch(`('https://api.aimlapi.com/v2/generate/video/kling/generation?generation_id=${id}`);
         if (!resp.ok) {
           throw new Error('Error al consultar el estado del video.');
         }
@@ -105,167 +92,101 @@ export default function VideoForm() {
         const data: AilmResponse = await resp.json();
         console.log('polling status:', data.status);
 
-        // Si el status es "completed", detenemos el polling
         if (data.status === 'completed' && data.video?.url) {
           clearInterval(intervalId);
-          handleVideoReady(data.video.url);
+          setVideoUrl(data.video.url);
+          setIsGenerating(false);
         }
-        // También podrías manejar otros estados (p.ej. "error") con else if
       } catch (error) {
         console.error(error);
         clearInterval(intervalId);
         alert('Ocurrió un error consultando el estado. Revisa la consola.');
+        setIsGenerating(false);
       }
-    }, 2000); // Cada 2 segundos
-  };
-
-  // Función para manejar el caso en que ya tenemos la URL del video
-  const handleVideoReady = async (videoUrl: string) => {
-    try {
-      setSaving(true);
-      
-      // Convertir la URL del video a blob
-      const response = await fetch(videoUrl);
-      const blob = await response.blob();
-      
-      // Crear un nombre de archivo seguro
-      const timestamp = new Date().getTime();
-      const safeFileName = `video_${timestamp}.mp4`;
-
-      // Convertir blob a base64
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result as string;
-          const base64Data = base64.split(',')[1];
-          resolve(base64Data);
-        };
-        reader.readAsDataURL(blob);
-      });
-
-      // 1. Subir el archivo al bucket
-      const buffer = Buffer.from(base64Data, 'base64');
-      const path = `videos/${safeFileName}`;
-
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('ai-generated-media')
-        .upload(path, buffer, {
-          contentType: 'video/mp4',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw new Error(`Error al subir el video: ${uploadError.message}`);
-      }
-
-      // 2. Obtener la URL pública
-      const { data: urlData } = supabase.storage
-        .from('ai-generated-media')
-        .getPublicUrl(path);
-
-      if (!urlData?.publicUrl) {
-        throw new Error('No se pudo obtener la URL pública del video');
-      }
-
-      // 3. Insertar en ai_media_assets
-      const { data: assetData, error: assetError } = await supabase
-        .from('ai_media_assets')
-        .insert({
-          bucket_path: path,
-          file_name: safeFileName,
-          file_type: 'video',
-          mime_type: 'video/mp4',
-          size_in_bytes: blob.size,
-          metadata: {
-            duration: Number(duration),
-            aspect_ratio: ratio,
-            prompt: prompt,
-            model: model,
-            aiml_generation_id: taskId,
-            generation_status: 'completed'
-          },
-          user_id: 2 // Temporal, deberías obtener el ID del usuario actual
-        })
-        .select()
-        .single();
-
-      if (assetError || !assetData) {
-        throw new Error(`Error al guardar en ai_media_assets: ${assetError?.message}`);
-      }
-
-      // 4. Insertar en ai_media_asset_relations (nota: el nombre de la tabla también cambió)
-      const { error: relationError } = await supabase
-        .from('ai_media_asset_relations')
-        .insert({
-          media_asset_id: assetData.id,
-          related_table: 'aiml_generations',
-          related_id: 1, // Temporal, deberías tener el ID correcto
-          relation_type: 'generation'
-        });
-
-      if (relationError) {
-        throw new Error(`Error al guardar la relación: ${relationError.message}`);
-      }
-
-      console.log('Video guardado exitosamente:', urlData.publicUrl);
-      router.push(`/success?videoUrl=${encodeURIComponent(urlData.publicUrl)}`);
-    } catch (error) {
-      console.error('Error al guardar el video:', error);
-      alert('Error al guardar el video. Se mostrará el video original.');
-      router.push(`/success?videoUrl=${encodeURIComponent(videoUrl)}`);
-    } finally {
-      setSaving(false);
-    }
+    }, 2000);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block mb-1 text-cyan-300 font-semibold">Texto / Prompt</label>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="w-full px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
-          placeholder="Describe el contenido del video..."
-          required
+    <div className="flex flex-col lg:flex-row gap-8 w-full">
+      {/* Panel izquierdo - Controles */}
+      <div className="flex-1 space-y-6 max-w-xl mx-auto lg:mx-0">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block mb-2 text-[#8C1AD9] font-semibold text-lg">
+              Texto / Prompt
+            </label>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
+              placeholder="Describe el contenido del video..."
+              rows={4}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-[#8C1AD9] font-semibold text-lg">
+              Duración (segundos)
+            </label>
+            <input
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
+              placeholder="5"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-[#8C1AD9] font-semibold text-lg">
+              Formato de Video
+            </label>
+            <select
+              value={ratio}
+              onChange={(e) => setRatio(e.target.value)}
+              className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
+            >
+              <option value="16:9">Horizontal (16:9)</option>
+              <option value="9:16">Vertical (9:16)</option>
+              <option value="1:1">Cuadrado (1:1)</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-6 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{
+              background: "linear-gradient(90deg, #8C1AD9 30%, #2C2A59 80%)",
+              boxShadow: "0 0 16px 3px #8C1AD9",
+              borderRadius: "12px",
+            }}
+          >
+            {loading ? 'Generando...' : 'Generar Video'}
+          </button>
+
+          {taskId && (
+            <p className="text-[#8C1AD9] text-sm mt-4 text-center">
+              ID de la tarea: {taskId}
+            </p>
+          )}
+        </form>
+      </div>
+
+      {/* Panel derecho - Vista previa */}
+      <div className="flex-1 flex items-center justify-center">
+        <VideoViewer 
+          videoUrl={videoUrl} 
+          prompt={prompt} 
+          isLoading={isGenerating}
+          duration={duration}
+          ratio={ratio}
+          model={model}
+          taskId={taskId}
         />
       </div>
-
-      <div>
-        <label className="block mb-1 text-cyan-300 font-semiboldblock mb-1 text-cyan-300 font-semibold">Duration</label>
-        <input
-          type="number"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="w-full px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
-          placeholder="5"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block mb-1 text-cyan-300 font-semiboldblock mb-1 text-cyan-300 font-semibold">Aspect Ratio</label>
-        <select
-          value={ratio}
-          onChange={(e) => setRatio(e.target.value)}
-          className="w-full px-2 py-1 bg-black text-green-300 border border-fuchsia-500 rounded focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
-        >
-          <option value="16:9">16:9</option>
-          <option value="9:16">9:16</option>
-          <option value="1:1">1:1</option>
-        </select>
-      </div>
-
-      <button
-        type="submit"
-        className="w-full py-2 px-4 text-white bg-blue-600 hover:bg-blue-700 rounded"
-        disabled={loading || saving}
-      >
-        {loading ? 'Generando...' : saving ? 'Guardando...' : 'Generar Video'}
-      </button>
-
-      {/* Mostrar el ID temporalmente para debug */}
-      {taskId && <p className="text-gray-500 text-sm">Task ID: {taskId}</p>}
-    </form>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 
+
 interface SaveOptions {
   base64Data: string;
   folder: string;
@@ -8,7 +9,7 @@ interface SaveOptions {
   prompt: string;
   originalName: string;
   imageId?: string | null;
-  contentType?: string; // Opcional, por defecto será 'image/jpeg'
+  contentType?: string;
 }
 
 export async function saveToSupabase({
@@ -23,7 +24,6 @@ export async function saveToSupabase({
 }: SaveOptions): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const now = new Date();
-    // Mantener la extensión original del archivo
     const extension = contentType === 'video/mp4' ? 'mp4' : 'jpg';
     const filename = `${originalName.replace(/[^a-zA-Z0-9_-]/g, '_')}_${now.toISOString().replace(/[:.]/g, '-')}.${extension}`;
     const path = `${folder}/${filename}`;
@@ -44,9 +44,10 @@ export async function saveToSupabase({
 
     const { error: insertError } = await supabase.from(table).insert({
       url: publicUrl,
-      prompt,
+      prompt: prompt,
       original_name: filename,
       image_id: imageId,
+      likes: 0,
     });
 
     if (insertError) return { success: false, error: insertError.message };
