@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import PromptInput from '../FluxGenerator/PromptInput';
 import MusicViewer from './MusicViewer';
+import { nullable } from 'zod';
+import Image from 'next/image';
 
 export default function MusicGenerator() {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState<string>('');
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [model, setModel] = useState<string>('stable-audio');
@@ -19,21 +21,12 @@ export default function MusicGenerator() {
     setLoading(true);
     setResult(null);
 
-    //const base64Image = imageFile ? await toBase64(imageFile) : null;
-
     const payload: Record<string, any> = {
       model,
       prompt,
       secondsStart: seconds_start,
       secondsTotal: seconds_total,
       steps,
-     /* width: modelParams[selectedModel]?.width ? width : null,
-      height: modelParams[selectedModel]?.height ? height : null,
-      output_format: outputFormat,
-      prompt_upsampling: promptUpsampling,
-      negative_prompt: modelParams[selectedModel]?.negative_prompt ? negativePrompt : null,
-      aspect_ratio: modelParams[selectedModel]?.aspect_ratio ? aspectRatio : null,
-      raw: modelParams[selectedModel]?.raw ? raw : undefined,*/
     };
 
     const response = await fetch('/api/musicGenerate', {
@@ -51,9 +44,7 @@ export default function MusicGenerator() {
     for (let i = 0; i < 20; i++) {
       const poll = await fetch(`/api/check-music/${id}`);
       const data = await poll.json();
-      console.log('Respuesta del servidor:', data);
       if (data.completed) {
-        console.log('URL del audio:', data.sample);
         setResult(data.sample);
         break;
       }
@@ -63,63 +54,71 @@ export default function MusicGenerator() {
     setLoading(false);
   };
 
-
   return (
-    <div className="max-w-xl mx-auto space-y-4">
-
-        <label className="block text-sm">Modelo</label>
+    <div className="flex flex-col lg:flex-row gap-8 w-full">
+      {/* Panel izquierdo - Formulario */}
+      <div className="flex-1 space-y-6 max-w-xl mx-auto lg:mx-0">
+        <label className="block text-[#8C1AD9] font-semibold text-lg">Modelo</label>
         <input
           type="string"
           value={model}
           defaultValue="stable-audio"
-          //onChange={(e) => onChange('seconds_start', Number(e.target.value))}
-          className="w-full p-1 border rounded"
+          className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
         />
-    
-      <PromptInput value={prompt} onChange={setPrompt} />
-
-        <label className="block text-sm">Seconds Start</label>
+        <PromptInput prompt={prompt} onChangePrompt={setPrompt} negativePrompt={null} onChangeNegativePrompt={() => {}} />
+        <label className="block text-[#8C1AD9] font-semibold text-lg">Seconds Start</label>
         <input
           type="number"
           value={seconds_start}
           defaultValue={1}
-          //onChange={(e) => onChange('seconds_start', Number(e.target.value))}
-          className="w-full p-1 border rounded"
+          className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
           min={1}
           max={30}
         />
-
-        <label className="block text-sm">Seconds Total</label>
+        <label className="block text-[#8C1AD9] font-semibold text-lg">Seconds Total</label>
         <input
           type="number"
           value={seconds_total}
           defaultValue={30}
-          //onChange={(e) => onChange('seconds_total', Number(e.target.value))}
-          className="w-full p-1 border rounded"
+          className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
           min={10}
           max={60}
         />
-
-        <label className="block text-sm">Steps</label>
+        <label className="block text-[#8C1AD9] font-semibold text-lg">Steps</label>
         <input
           type="number"
           value={steps}
           defaultValue={100}
-          //onChange={(e) => onChange('steps', Number(e.target.value))}
-          className="w-full p-1 border rounded"
+          className="w-full px-4 py-3 bg-[#121559] text-white border-2 border-[#8C1AD9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C1AD9] focus:border-transparent transition-all"
           min={1}
           max={100}
         />
-
         <button
           onClick={handleSubmit}
           disabled={loading || !prompt}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+          className="w-full py-3 px-6 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: "linear-gradient(90deg, #8C1AD9 30%, #2C2A59 80%)",
+            boxShadow: "0 0 16px 3px #8C1AD9",
+            borderRadius: "12px",
+          }}
         >
           {loading ? <Loader2 className="animate-spin" /> : 'Generar Música'}
         </button>
-      <MusicViewer result={result} />
+        <MusicViewer result={result} />
       </div>
-    
+      {/* Panel derecho - Imagen de fondo */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="relative w-full h-[400px] max-w-md mx-auto">
+          <Image
+            src="/images/FondoMusica.png"
+            alt="Fondo Música"
+            fill
+            className="rounded-lg object-contain"
+            priority
+          />
+        </div>
+      </div>
+    </div>
   );
 }

@@ -18,20 +18,28 @@ export default function MusicViewer({ result }: MusicViewerProps) {
 
   return (
     <div className="mt-4">
-      <div className="bg-white shadow-md rounded-lg p-4 max-w-md mx-auto mt-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-[#1C228C] shadow-2xl rounded-2xl p-6 max-w-md mx-auto border-2 border-[#8C1AD9]">
+        <h2 className="text-2xl font-bold mb-4 text-center"
+          style={{
+            background: 'linear-gradient(90deg, #8C1AD9 30%, #2C2A59 80%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            textShadow: '0 0 10px #8C1AD9',
+            letterSpacing: '0.02em',
+          }}
+        >
           Reproductor de Audio
         </h2>
         <audio 
           controls 
-          className="w-full mb-4"
+          className="w-full mb-4 bg-[#121559] rounded-lg border-2 border-[#8C1AD9]"
           onError={() => setError('Error al cargar el audio. Por favor, intenta de nuevo.')}
         >
           <source src={result} type="audio/wav" />
           Tu navegador no soporta el elemento de audio.
         </audio>
         {error && (
-          <div className="text-red-600 text-sm mt-2">
+          <div className="text-red-400 text-sm mt-2 text-center">
             {error}
           </div>
         )}

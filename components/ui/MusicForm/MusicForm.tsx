@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 export default function MusicForm() {
   const router = useRouter();
@@ -82,37 +83,56 @@ export default function MusicForm() {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit} className="bg-black p-6 rounded-xl shadow-lg max-w-xl mx-auto flex flex-col gap-6 border border-pink-500">
-        <div>
-          <label htmlFor="prompt" className="text-lg font-bold text-pink-400">
-            Describe la música que quieres generar
-          </label>
-          <textarea
-            id="prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="bg-black border-2 border-blue-500 text-green-400 focus:ring-pink-400 rounded-lg p-2"
-            rows={3}
-            required
+    <div className="flex flex-col lg:flex-row gap-8 w-full">
+      {/* Panel izquierdo - Formulario */}
+      <div className="flex-1 flex items-center justify-center">
+        <form onSubmit={handleSubmit} className="bg-[#121559] p-8 rounded-2xl shadow-2xl max-w-xl w-full flex flex-col gap-6 border-2 border-[#8C1AD9]">
+          <div>
+            <label htmlFor="prompt" className="text-lg font-bold text-[#8C1AD9]">
+              Describe la música que quieres generar
+            </label>
+            <textarea
+              id="prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="bg-[#1C228C] border-2 border-[#8C1AD9] text-white focus:ring-[#8C1AD9] rounded-lg p-3 w-full transition-all focus:outline-none focus:ring-2 focus:border-transparent"
+              rows={3}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-6 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{
+              background: "linear-gradient(90deg, #8C1AD9 30%, #2C2A59 80%)",
+              boxShadow: "0 0 16px 3px #8C1AD9",
+              borderRadius: "12px",
+            }}
+          >
+            {loading ? 'Generando...' : 'Generar Música'}
+          </button>
+          {generationId && (
+            <div className="mt-4 p-4 bg-[#1C228C] rounded-lg border-2 border-[#8C1AD9] text-center">
+              <p className="text-sm text-[#8C1AD9]">
+                La generación está en proceso. ID: {generationId}
+              </p>
+            </div>
+          )}
+        </form>
+      </div>
+      {/* Panel derecho - Imagen de fondo */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="relative w-full h-[400px] max-w-md mx-auto">
+          <Image
+            src="/images/FondoMusica.png"
+            alt="Fondo Música"
+            fill
+            className="rounded-lg object-contain"
+            priority
           />
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-          {loading ? 'Generando...' : 'Generar Música'}
-        </button>
-      </form>
-      
-      {generationId && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-md">
-          <p className="text-sm text-blue-700">
-            La generación está en proceso. ID: {generationId}
-          </p>
-        </div>
-      )}
+      </div>
     </div>
   );
 } 
