@@ -29,19 +29,37 @@ export default function CanvasEditor({
   const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
 
+  const getFittedDimensions = (img: HTMLImageElement) => {
+    const maxWidth = 500;
+    if (img.width > maxWidth) {
+      const scale = maxWidth / img.width;
+      return {
+        width: maxWidth,
+        height: img.height * scale,
+        scale,
+      };
+    }
+    return {
+      width: img.width,
+      height: img.height,
+      scale: 1,
+    };
+  };
+
   const drawImage = () => {
     if (!image || !imageCanvasRef.current) return;
 
+    const { width, height } = getFittedDimensions(image);
     const canvas = imageCanvasRef.current;
     const ctx = canvas.getContext('2d')!;
 
-    const scaledWidth = image.width * imageScale;
-    const scaledHeight = image.height * imageScale;
+    const scaledWidth = width * imageScale;
+    const scaledHeight = height * imageScale;
     const offsetX = (canvas.width - scaledWidth) / 2 + imageOffset;
     const offsetY = (canvas.height - scaledHeight) / 2 + imageOffsetY;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
+    ctx.drawImage(image, 0, 0, image.width, image.height, offsetX, offsetY, scaledWidth, scaledHeight);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -83,14 +101,16 @@ export default function CanvasEditor({
     const imgCanvas = imageCanvasRef.current!;
     const drawCanvas = drawCanvasRef.current!;
 
+    const { width, height } = getFittedDimensions(image);
+
     const imageChanged =
-      imgCanvas.width !== image.width || imgCanvas.height !== image.height;
+      imgCanvas.width !== width || imgCanvas.height !== height;
 
     if (imageChanged) {
-      imgCanvas.width = image.width;
-      imgCanvas.height = image.height;
-      drawCanvas.width = image.width;
-      drawCanvas.height = image.height;
+      imgCanvas.width = width;
+      imgCanvas.height = height;
+      drawCanvas.width = width;
+      drawCanvas.height = height;
       // No rellenamos drawCanvas: se deja transparente
     }
 
@@ -106,10 +126,11 @@ export default function CanvasEditor({
 
   return (
     <div className="w-full flex justify-center">
-      <div className="relative">
+      <div className="relative" style={{ maxWidth: 500, width: "100%" }}>
         <canvas
           ref={imageCanvasRef}
           className="absolute top-0 left-0 z-0 block border"
+          style={{ maxWidth: 500, width: "100%", height: "auto", display: "block" }}
         />
         <canvas
           ref={drawCanvasRef}
@@ -118,6 +139,7 @@ export default function CanvasEditor({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           className="absolute top-0 left-0 z-10 block border cursor-crosshair"
+          style={{ maxWidth: 500, width: "100%", height: "auto", display: "block" }}
         />
       </div>
     </div>

@@ -46,6 +46,7 @@ export default function FluxGenerator() {
     if (!prompt) return alert('El prompt es obligatorio');
     setLoading(true);
     setResult(null);
+    setShowAdvanced(false); // Añadir esta línea
 
     const base64Image = imageFile ? await toBase64(imageFile) : null;
 
@@ -106,7 +107,7 @@ export default function FluxGenerator() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 w-full" 
+    <div className="flex flex-col lg:flex-row gap-8 w-full"
       style={{
         background: "linear-gradient(140deg, #1C228C 0%, #2C2A59 60%, #060826 100%)",
       }}

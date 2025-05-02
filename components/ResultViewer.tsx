@@ -124,11 +124,15 @@ export default function ResultViewer({
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-6" style={{ marginTop: "10px", maxWidth: "500px", width: "100%" }}>
       <button
         onClick={handleProcess}
         disabled={isProcessing || !image || !maskCanvas || !imageCanvas}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        className="w-full bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white py-2 px-4 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] disabled:opacity-50 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-lg"
+        style={{
+          boxShadow: "0 0 16px 3px #8C1AD9",
+          borderRadius: "12px",
+        }}
       >
         {isProcessing ? 'Procesando...' : 'Procesar Imagen'}
       </button>
