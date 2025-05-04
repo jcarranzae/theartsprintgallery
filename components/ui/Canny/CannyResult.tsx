@@ -53,19 +53,19 @@ export default function CannyResult({ result, controlImageUrl, prompt }: Props) 
   return (
     <div className="mt-8 text-center">
       {imageUrl ? (
-        <div>
-          <img src={imageUrl} alt="Canny Output" className="mx-auto rounded-lg border-4 border-pink-400 shadow-2xl" />
+        <div className="bg-[#121559] rounded-2xl p-6 border-2 border-[#8C1AD9] shadow-2xl max-w-xl mx-auto flex flex-col items-center">
+          <img src={imageUrl} alt="Canny Output" className="mx-auto rounded-lg border-4 border-[#8C1AD9] shadow-2xl mb-4" />
           {!savedUrl && (
             <SaveButton onClick={handleSave} loading={saving} label="Guardar en Supabase" />
           )}
           {savedUrl && (
-            <p className="mt-2 text-green-400">
-              Imagen guardada correctamente. <a href={savedUrl} target="_blank" className="underline">Ver imagen</a>
+            <p className="mt-2 text-[#8C1AD9] font-semibold">
+              Imagen guardada correctamente. <a href={savedUrl} target="_blank" className="underline hover:text-white transition-colors">Ver imagen</a>
             </p>
           )}
         </div>
       ) : (
-        <p className="text-pink-400">Esperando a que la imagen esté lista...</p>
+        <p className="text-[#8C1AD9]">Esperando a que la imagen esté lista...</p>
       )}
     </div>
   );

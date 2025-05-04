@@ -97,70 +97,70 @@ export default function CannyForm({ onResult }: CannyFormProps) {
 
   return (
     <form
-      className="bg-black p-6 rounded-xl shadow-lg max-w-xl mx-auto flex flex-col gap-6 border border-pink-500"
+      className="bg-[#121559] p-8 rounded-2xl shadow-2xl max-w-xl mx-auto flex flex-col gap-6 border-2 border-[#8C1AD9]"
       onSubmit={handleSubmit}
     >
-      <label className="text-lg font-bold text-pink-400">Prompt</label>
+      <label className="text-lg font-bold text-[#8C1AD9]">Prompt</label>
       <textarea
-        className="bg-black border-2 border-blue-500 text-green-400 focus:ring-pink-400 rounded-lg p-2"
+        className="bg-[#1C228C] border-2 border-[#8C1AD9] text-white focus:ring-[#8C1AD9] rounded-lg p-3 w-full transition-all focus:outline-none focus:ring-2 focus:border-transparent"
         rows={3}
         value={prompt}
         onChange={e => setPrompt(e.target.value)}
         required
       />
 
-      <label className="text-lg font-bold text-blue-400 mt-2">Imagen de control</label>
+      <label className="text-lg font-bold text-[#8C1AD9] mt-2">Imagen de control</label>
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
         onChange={handleControlImageChange}
-        className="file:bg-pink-400 file:text-black file:rounded file:px-3 file:py-1 text-green-400"
+        className="file:bg-[#8C1AD9] file:text-black file:rounded file:px-3 file:py-1 text-white"
         required
       />
       {controlPreview && (
-        <img src={controlPreview} alt="Control preview" className="w-48 h-auto mt-2 rounded border-2 border-green-400" />
+        <img src={controlPreview} alt="Control preview" className="w-48 h-auto mt-2 rounded border-2 border-[#8C1AD9]" />
       )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-blue-300">Canny Low Threshold</label>
+          <label className="block text-[#8C1AD9]">Canny Low Threshold</label>
           <input type="range" min={0} max={500} value={cannyLow}
             onChange={e => setCannyLow(Number(e.target.value))}
-            className="w-full accent-blue-400"
+            className="w-full accent-[#8C1AD9]"
           />
-          <span className="text-green-400">{cannyLow}</span>
+          <span className="text-[#8C1AD9]">{cannyLow}</span>
         </div>
         <div>
-          <label className="block text-blue-300">Canny High Threshold</label>
+          <label className="block text-[#8C1AD9]">Canny High Threshold</label>
           <input type="range" min={0} max={500} value={cannyHigh}
             onChange={e => setCannyHigh(Number(e.target.value))}
-            className="w-full accent-pink-400"
+            className="w-full accent-[#8C1AD9]"
           />
-          <span className="text-pink-400">{cannyHigh}</span>
+          <span className="text-[#8C1AD9]">{cannyHigh}</span>
         </div>
         <div>
-          <label className="block text-green-300">Steps</label>
+          <label className="block text-[#8C1AD9]">Steps</label>
           <input type="range" min={15} max={50} value={steps}
             onChange={e => setSteps(Number(e.target.value))}
-            className="w-full accent-green-400"
+            className="w-full accent-[#8C1AD9]"
           />
-          <span className="text-green-400">{steps}</span>
+          <span className="text-[#8C1AD9]">{steps}</span>
         </div>
         <div>
-          <label className="block text-green-300">Guidance</label>
+          <label className="block text-[#8C1AD9]">Guidance</label>
           <input type="range" min={1} max={100} value={guidance}
             onChange={e => setGuidance(Number(e.target.value))}
-            className="w-full accent-blue-400"
+            className="w-full accent-[#8C1AD9]"
           />
-          <span className="text-blue-400">{guidance}</span>
+          <span className="text-[#8C1AD9]">{guidance}</span>
         </div>
       </div>
 
       <div className="flex items-center gap-4 mt-2">
-        <label className="text-blue-400">Output</label>
+        <label className="text-[#8C1AD9]">Output</label>
         <select
-          className="bg-black border-2 border-green-500 text-pink-400 rounded-lg px-2 py-1"
+          className="bg-[#1C228C] border-2 border-[#8C1AD9] text-white rounded-lg px-2 py-1"
           value={outputFormat}
           onChange={e => setOutputFormat(e.target.value as 'jpeg' | 'png')}
         >
@@ -168,12 +168,12 @@ export default function CannyForm({ onResult }: CannyFormProps) {
           <option value="png">PNG</option>
         </select>
 
-        <label className="text-pink-400 ml-6">
+        <label className="text-[#8C1AD9] ml-6">
           <input
             type="checkbox"
             checked={promptUpsampling}
             onChange={e => setPromptUpsampling(e.target.checked)}
-            className="accent-pink-400 mr-1"
+            className="accent-[#8C1AD9] mr-1"
           />
           Prompt Upsampling
         </label>
@@ -182,12 +182,10 @@ export default function CannyForm({ onResult }: CannyFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="bg-gradient-to-r from-pink-500 to-blue-500 text-black py-2 px-6 mt-4 rounded-lg font-bold hover:from-pink-400 hover:to-blue-400 shadow-xl"
+        className="w-full py-3 px-6 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] shadow-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Generando..." : "Generar Imagen"}
       </button>
     </form>
-
-    
   );
 }

@@ -4,16 +4,23 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MusicForm() {
   const router = useRouter();
   const [prompt, setPrompt] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [generationId, setGenerationId] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setIsGenerating(true);
 
     try {
       const response = await fetch('/api/musicGenerate', {
@@ -36,17 +43,18 @@ export default function MusicForm() {
 
       const data = await response.json();
       
-      if (data.status === 'queued') {
-        setGenerationId(data.generationId);
-        startPolling(data.generationId);
-      } else if (data.status === 'completed') {
-        toast.success('Música generada exitosamente');
-        router.push('/dashboard/music');
+      if (data.id) {
+        setGenerationId(data.id);
+        startPolling(data.id);
+      } else {
+        toast.error('No se pudo obtener el ID de generación');
+        setIsGenerating(false);
       }
 
     } catch (error) {
       console.error(error);
       toast.error('Error al generar la música');
+      setIsGenerating(false);
     } finally {
       setLoading(false);
     }
@@ -62,24 +70,59 @@ export default function MusicForm() {
 
         const data = await response.json();
         
-        if (data.status === 'completed') {
+        if (data.completed) {
           clearInterval(interval);
           toast.success('Música generada exitosamente');
-          router.push('/dashboard/music');
-        } else if (data.status === 'error') {
+          setAudioUrl(data.sample);
+          setGenerationId(null);
+          setIsGenerating(false);
+        } else if (data.error) {
           clearInterval(interval);
           toast.error('Error en la generación de música');
+          setGenerationId(null);
+          setIsGenerating(false);
         }
-        // Si sigue en proceso, continuamos con el polling
       } catch (error) {
         console.error(error);
         clearInterval(interval);
         toast.error('Error al verificar estado');
+        setGenerationId(null);
+        setIsGenerating(false);
       }
-    }, 2000); // Polling cada 2 segundos
+    }, 2000);
 
-    // Limpiar el intervalo cuando el componente se desmonte
     return () => clearInterval(interval);
+  };
+
+  const handleSave = async () => {
+    if (!audioUrl) return;
+    setSaving(true);
+    try {
+      const metadata = {
+        prompt,
+        model: 'stable-audio',
+        secondsStart: 1,
+        secondsTotal: 30,
+        steps: 100,
+        generatedAt: new Date().toISOString(),
+      };
+      const response = await fetch('/api/save-music', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl, metadata }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('¡Música guardada correctamente!');
+        setSaved(true);
+      } else {
+        toast.error(data.error || 'Error al guardar la música');
+      }
+    } catch (error) {
+      toast.error('Error al guardar la música');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -121,16 +164,47 @@ export default function MusicForm() {
           )}
         </form>
       </div>
-      {/* Panel derecho - Imagen de fondo */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="relative w-full h-[400px] max-w-md mx-auto">
-          <Image
-            src="/images/FondoMusica.png"
-            alt="Fondo Música"
-            fill
-            className="rounded-lg object-contain"
-            priority
-          />
+      {/* Panel derecho - Imagen de fondo o reproductor */}
+      <div className="flex-1 flex items-center justify-center p-6 relative">
+        <div className="relative w-full h-[400px] max-w-md mx-auto flex items-center justify-center">
+          {audioUrl ? (
+            <div className="w-full flex flex-col items-center justify-center bg-[#1C228C] rounded-lg p-6 border-2 border-[#8C1AD9] shadow-2xl">
+              <span className="text-[#8C1AD9] text-xl font-semibold mb-4">Tu música generada</span>
+              <audio controls src={audioUrl} className="w-full mb-4" />
+              <button
+                onClick={handleSave}
+                disabled={saving || saved}
+                className="w-full py-3 px-6 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] shadow-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Guardando...</span> : 'Guardar'}
+              </button>
+              {saved && (
+                <a
+                  href=""
+                  onClick={e => { e.preventDefault(); window.location.reload(); }}
+                  className="block mt-4 text-[#8C1AD9] hover:text-white font-semibold text-center transition-colors"
+                >
+                  Crear más música
+                </a>
+              )}
+            </div>
+          ) : (
+            <>
+              <Image
+                src="/images/FondoMusica.png"
+                alt="Fondo Música"
+                fill
+                className="rounded-lg object-contain"
+                priority
+              />
+              {isGenerating && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-lg">
+                  <span className="text-[#8C1AD9] text-xl font-semibold mb-2">Generando Música</span>
+                  <Loader2 className="animate-spin text-[#8C1AD9]" size={32} />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

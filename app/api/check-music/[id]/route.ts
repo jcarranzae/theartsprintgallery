@@ -4,15 +4,16 @@ import { MediaService } from '@/lib/services/mediaService';
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
+  const { id } = await params;
+  console.log('Entrando en /api/check-music/[id] con id:', id);
   try {
     const session = await getSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const id = context.params.id;
     if (!id) {
       return NextResponse.json({ error: 'Falta el ID de la generación' }, { status: 400 });
     }
@@ -30,12 +31,12 @@ export async function GET(
     }
 
     const result = await response.json();
-    console.log('Resultado de la API:', result);
+    //console.log('Resultado de la API:', result);
 
     // Si la generación está completa, guardamos el audio
     if (result.status === 'completed' && result.audio_file?.url) {
       try {
-        const mediaService = new MediaService();
+       /* const mediaService = new MediaService();
         const mediaAsset = await mediaService.uploadAudioFromUrl({
           audioUrl: result.audio_file.url,
           userId: session.user.id,
@@ -44,7 +45,7 @@ export async function GET(
           },
           relatedTable: 'ai_media_assets',
           relatedId: session.user.id
-        });
+        });*/
 
         return NextResponse.json({
           completed: true,

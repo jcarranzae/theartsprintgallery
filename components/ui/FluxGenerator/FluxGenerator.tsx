@@ -78,7 +78,7 @@ export default function FluxGenerator() {
       return alert('Error al generar la imagen, por favor intenta de nuevo.');
     }
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 60; i++) {
       const poll = await fetch(`/api/check-image/${id}`);
       const data = await poll.json();
       if (data.completed && data.sample) {
