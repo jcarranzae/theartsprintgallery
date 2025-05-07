@@ -1,8 +1,9 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const videoUrl = searchParams.get('videoUrl');
 
@@ -30,5 +31,17 @@ export default function SuccessPage() {
         Generar Otro Video
       </a>
     </main>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Cargando...</p>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }
