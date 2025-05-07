@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
+  const { id } = await params;
+  //const id = params.id;
   if (!id) return NextResponse.json({ error: 'Falta el ID de la imagen' }, { status: 400 });
 
   const apiUrl = `https://api.us1.bfl.ai/v1/get_result?id=${id}`;
