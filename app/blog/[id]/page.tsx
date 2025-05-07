@@ -8,9 +8,9 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export default async function BlogArticle({
     params,
 }: {
-    params: { id: number }
+    params: Promise<{ id: string }>
 }) {
-    const { id } = params;
+    const { id } = await params;
     const supabaseAdmin = createClient(
         supabaseUrl || '', supabaseKey || ''
     );
@@ -42,7 +42,7 @@ export default async function BlogArticle({
                     <span>Publicado el {formattedDate}</span>
                 </div>
                 <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">{data.short_description}</p>
-                <div 
+                <div
                     className="blog-content [&>p]:mb-8 [&>p:last-child]:mb-0"
                     dangerouslySetInnerHTML={{ __html: data.content }}
                 />
