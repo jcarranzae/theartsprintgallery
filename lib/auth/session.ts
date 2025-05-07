@@ -1,15 +1,29 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NewUser } from '@/lib/db/schema';
-import { randomBytes, createHash } from 'crypto';
 
 const key = new TextEncoder().encode(process.env.AUTH_SECRET);
 
+async function generateSalt() {
+  const salt = new Uint8Array(16);
+  crypto.getRandomValues(salt);
+  return Array.from(salt)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function hashString(str: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString('hex');
-  const hash = createHash('sha256')
-    .update(password + salt)
-    .digest('hex');
+  const salt = await generateSalt();
+  const hash = await hashString(password + salt);
   return `${salt}:${hash}`;
 }
 
@@ -18,9 +32,7 @@ export async function comparePasswords(
   hashedPassword: string
 ) {
   const [salt, storedHash] = hashedPassword.split(':');
-  const hash = createHash('sha256')
-    .update(plainTextPassword + salt)
-    .digest('hex');
+  const hash = await hashString(plainTextPassword + salt);
   return hash === storedHash;
 }
 
