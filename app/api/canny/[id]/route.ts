@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = context.params;
   //const id = params.id;
   if (!id) return NextResponse.json({ error: 'Falta el ID de la imagen' }, { status: 400 });
 
