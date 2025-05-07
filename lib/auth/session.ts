@@ -1,20 +1,27 @@
-import { hash, compare } from '@node-rs/bcrypt';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NewUser } from '@/lib/db/schema';
+import { randomBytes, createHash } from 'crypto';
 
 const key = new TextEncoder().encode(process.env.AUTH_SECRET);
-const SALT_ROUNDS = 10;
 
 export async function hashPassword(password: string) {
-  return hash(password, SALT_ROUNDS);
+  const salt = randomBytes(16).toString('hex');
+  const hash = createHash('sha256')
+    .update(password + salt)
+    .digest('hex');
+  return `${salt}:${hash}`;
 }
 
 export async function comparePasswords(
   plainTextPassword: string,
   hashedPassword: string
 ) {
-  return compare(plainTextPassword, hashedPassword);
+  const [salt, storedHash] = hashedPassword.split(':');
+  const hash = createHash('sha256')
+    .update(plainTextPassword + salt)
+    .digest('hex');
+  return hash === storedHash;
 }
 
 type SessionData = {
