@@ -4,7 +4,7 @@ import { MediaService } from '@/lib/services/mediaService';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   console.log('Entrando en /api/check-music/[id] con id:', id);
@@ -36,16 +36,16 @@ export async function GET(
     // Si la generación está completa, guardamos el audio
     if (result.status === 'completed' && result.audio_file?.url) {
       try {
-       /* const mediaService = new MediaService();
-        const mediaAsset = await mediaService.uploadAudioFromUrl({
-          audioUrl: result.audio_file.url,
-          userId: session.user.id,
-          metadata: {
-            generatedAt: new Date().toISOString()
-          },
-          relatedTable: 'ai_media_assets',
-          relatedId: session.user.id
-        });*/
+        /* const mediaService = new MediaService();
+         const mediaAsset = await mediaService.uploadAudioFromUrl({
+           audioUrl: result.audio_file.url,
+           userId: session.user.id,
+           metadata: {
+             generatedAt: new Date().toISOString()
+           },
+           relatedTable: 'ai_media_assets',
+           relatedId: session.user.id
+         });*/
 
         return NextResponse.json({
           completed: true,
