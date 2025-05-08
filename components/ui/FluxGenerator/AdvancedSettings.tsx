@@ -124,32 +124,33 @@ export default function AdvancedSettings({
                 <option value="4:3">4:3</option>
                 <option value="3:2">3:2</option>
                 <option value="16:9">16:9</option>
+                <option value="9:16">9:16</option>
               </select>
             </div>
           )}
 
           {showWidth && (
             <div>
-            <label className="block text-sm">Width</label>
-            <input
-              type="number"
-              value={width}
-              onChange={(e) => onChange('width', Number(e.target.value))}
-              className="w-full p-1 border rounded"
-            />
-          </div>
+              <label className="block text-sm">Width</label>
+              <input
+                type="number"
+                value={width}
+                onChange={(e) => onChange('width', Number(e.target.value))}
+                className="w-full p-1 border rounded"
+              />
+            </div>
           )}
 
           {showHeight && (
             <div>
-            <label className="block text-sm">Height</label>
-            <input
-              type="number"
-              value={height}
-              onChange={(e) => onChange('height', Number(e.target.value))}
-              className="w-full p-1 border rounded"
-            />
-          </div>
+              <label className="block text-sm">Height</label>
+              <input
+                type="number"
+                value={height}
+                onChange={(e) => onChange('height', Number(e.target.value))}
+                className="w-full p-1 border rounded"
+              />
+            </div>
           )}
 
           {showNegativePrompt && (
