@@ -4,7 +4,6 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> } 
 ) {
-  //const id = context?.params?.id;
   const { id } = await context.params;
 
   if (!id) {
@@ -12,6 +11,7 @@ export async function GET(
   }
 
   try {
+    console.log('Consultando estado de imagen:', id);
     const response = await fetch(`https://api.us1.bfl.ai/v1/get_result?id=${id}`, {
       headers: {
         Accept: 'application/json',
@@ -21,13 +21,19 @@ export async function GET(
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('Error en API externa:', errorText);
       return NextResponse.json({ error: 'API error', details: errorText }, { status: 500 });
     }
 
     const result = await response.json();
+    console.log('Estado de la imagen:', result);
 
     if (result.status === 'Ready' && result.result?.sample) {
+      console.log('Imagen lista, descargando...');
       const imgRes = await fetch(result.result.sample);
+      if (!imgRes.ok) {
+        throw new Error('Error al descargar la imagen');
+      }
       const buffer = await imgRes.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
 
@@ -38,8 +44,22 @@ export async function GET(
       });
     }
 
-    return NextResponse.json({ completed: false, id });
+    if (result.status === 'error') {
+      console.error('Error en la generación:', result);
+      return NextResponse.json({ 
+        error: 'Error en la generación', 
+        details: result.error || 'Error desconocido' 
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({ 
+      completed: false, 
+      id,
+      status: result.status,
+      progress: result.progress || 0
+    });
   } catch (err) {
+    console.error('Error al obtener imagen:', err);
     return NextResponse.json(
       { error: 'Error al obtener imagen', details: (err as Error).message },
       { status: 500 }

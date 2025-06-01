@@ -12,6 +12,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log('Datos recibidos:', {
+      imageLength: image.length,
+      maskLength: mask.length,
+      prompt
+    });
+
     const payload = {
       image,
       mask,
@@ -24,7 +30,7 @@ export async function POST(req: NextRequest) {
       safety_tolerance: 2,
     };
 
-
+    console.log('Enviando a API externa...');
     
     const response = await fetch('https://api.us1.bfl.ai/v1/flux-pro-1.0-fill', {
       method: 'POST',
@@ -38,6 +44,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('Error en API externa:', errorText);
       return NextResponse.json(
         { error: `Error en API externa: ${errorText}` },
         { status: response.status }
@@ -45,8 +52,10 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await response.json();
+    console.log('Respuesta de API externa:', result);
     return NextResponse.json(result);
   } catch (error: any) {
+    console.error('Error en el servidor:', error);
     return NextResponse.json(
       { error: 'Error en el servidor: ' + error.message },
       { status: 500 }

@@ -89,7 +89,7 @@ export default function CanvasEditor({
     const y = (e.clientY - rect.top) * scaleY;
 
     const brushSize = 20;
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
     ctx.beginPath();
     ctx.arc(x, y, brushSize, 0, Math.PI * 2);
     ctx.fill();
@@ -111,7 +111,9 @@ export default function CanvasEditor({
       imgCanvas.height = height;
       drawCanvas.width = width;
       drawCanvas.height = height;
-      // No rellenamos drawCanvas: se deja transparente
+      
+      const ctx = drawCanvas.getContext('2d')!;
+      ctx.clearRect(0, 0, width, height);
     }
 
     setMaskCanvas(drawCanvas);
@@ -129,7 +131,7 @@ export default function CanvasEditor({
       <div className="relative" style={{ maxWidth: 500, width: "100%" }}>
         <canvas
           ref={imageCanvasRef}
-          className="absolute top-0 left-0 z-0 block border"
+          className="w-full h-auto block border"
           style={{ maxWidth: 500, width: "100%", height: "auto", display: "block" }}
         />
         <canvas
@@ -138,8 +140,14 @@ export default function CanvasEditor({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          className="absolute top-0 left-0 z-10 block border cursor-crosshair"
-          style={{ maxWidth: 500, width: "100%", height: "auto", display: "block" }}
+          className="absolute top-0 left-0 w-full h-full block border cursor-crosshair"
+          style={{ 
+            maxWidth: 500, 
+            width: "100%", 
+            height: "100%", 
+            display: "block",
+            backgroundColor: "rgba(0, 0, 0, 0.3)"
+          }}
         />
       </div>
     </div>

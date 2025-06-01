@@ -19,20 +19,35 @@ export default function Page() {
   const [imageOffsetY, setImageOffsetY] = useState(0);
 
   const handleSubmit = async () => {
-    if (!prompt || !image) return;
+    if (!prompt || !image || !maskCanvas || !imageCanvas) return;
     setLoading(true);
     try {
-      // Aquí va tu lógica real de procesamiento de imágenes
-      // Por ejemplo, si usas una API:
+      // Convertir la imagen y la máscara a base64
+      const imageData = imageCanvas.toDataURL('image/jpeg').split(',')[1];
+      const maskData = maskCanvas.toDataURL('image/jpeg').split(',')[1];
+
       const response = await fetch('/api/process-image', {
         method: 'POST',
-        body: JSON.stringify({ image, prompt })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          image: imageData, 
+          mask: maskData,
+          prompt 
+        })
       });
+
+      if (!response.ok) {
+        throw new Error('Error en el procesamiento de la imagen');
+      }
+
       const data = await response.json();
       setResult(data.processedImage);
       setImageId(Date.now().toString());
     } catch (error) {
       console.error('Error processing image:', error);
+      alert('Error procesando la imagen: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -153,45 +168,49 @@ export default function Page() {
               maxWidth: "500px"
             }}
           >
-            <CanvasEditor
-              image={image}
-              setMaskCanvas={setMaskCanvas}
-              setImageCanvas={setImageCanvas}
-              setImageScale={setImageScale}
-              setImageOffset={setImageOffset}
-              setImageOffsetY={setImageOffsetY}
-              imageOffsetY={imageOffsetY}
-              imageOffset={imageOffset}
-              imageScale={imageScale}
-            />
+            <div className="w-full">
+              <CanvasEditor
+                image={image}
+                setMaskCanvas={setMaskCanvas}
+                setImageCanvas={setImageCanvas}
+                setImageScale={setImageScale}
+                setImageOffset={setImageOffset}
+                setImageOffsetY={setImageOffsetY}
+                imageOffsetY={imageOffsetY}
+                imageOffset={imageOffset}
+                imageScale={imageScale}
+              />
+            </div>
 
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !prompt}
-              className="w-full bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white py-2 px-4 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] disabled:opacity-50 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-lg"
-              style={{
-                boxShadow: "0 0 16px 3px #8C1AD9",
-                borderRadius: "12px",
-              }}
-            >
-              {loading ? <Loader2 className="animate-spin" /> : 'Procesar Imagen'}
-            </button>
+            <div className="w-full mt-4">
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !image || !maskCanvas || !imageCanvas}
+                className="w-full bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white py-2 px-4 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] disabled:opacity-50 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-lg"
+                style={{
+                  boxShadow: "0 0 16px 3px #8C1AD9",
+                  borderRadius: "12px",
+                }}
+              >
+                {loading ? 'Procesando...' : 'Procesar Imagen'}
+              </button>
+            </div>
+
+            <ResultViewer
+              image={image}
+              imageCanvas={imageCanvas}
+              maskCanvas={maskCanvas}
+              prompt={prompt}
+              result={result}
+              setResult={setResult}
+              setImageId={setImageId}
+              imageId={imageId}
+              imageScale={imageScale}
+              imageOffset={imageOffset}
+              imageOffsetY={imageOffsetY}
+            />
           </div>
         )}
-
-        <ResultViewer
-          image={image}
-          imageCanvas={imageCanvas}
-          maskCanvas={maskCanvas}
-          prompt={prompt}
-          result={result}
-          setResult={setResult}
-          setImageId={setImageId}
-          imageId={imageId}
-          imageScale={imageScale}
-          imageOffset={imageOffset}
-          imageOffsetY={imageOffsetY}
-        />
       </div>
     </div>
   );
