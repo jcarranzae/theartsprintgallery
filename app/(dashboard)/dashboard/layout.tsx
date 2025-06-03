@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Users, Settings, Shield, Activity, Menu, Video, Rss, 
   ImageUpscale, ImagePlus, Camera, Music, Scaling, 
-  Image as ImageIcon, FolderOpen, ChevronLeft 
+  Image as ImageIcon, FolderOpen, ChevronLeft, Terminal 
 } from 'lucide-react';
 
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ export default function DashboardLayout({
     { href: '/dashboard/tools/fill', icon: Scaling, label: 'Relleno de Imágenes' },
     { href: '/dashboard/tools/finetune', icon: Scaling, label: 'Finetune' },
     { href: '/dashboard/imageScaler', icon: Scaling, label: 'Escalador de Imágenes' },
+    { href: '/dashboard/promptGenerator', icon: Terminal, label: 'Generador de Prompts' },
     { href: '/dashboard/gallery', icon: FolderOpen, label: 'Galería Multimedia' },
   ];
 
