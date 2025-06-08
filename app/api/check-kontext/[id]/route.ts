@@ -35,7 +35,7 @@ export async function GET(
     }
 
     // Consultar estado del task en BFL API usando query parameter
-    const bflUrl = `${baseUrl}/v1/get_result?id=${id}`;
+    const bflUrl = `${baseUrl}/get_result?id=${id}`;
     console.log(`🎯 Polling BFL at: ${bflUrl}`);
     
     const response = await fetch(bflUrl, {
