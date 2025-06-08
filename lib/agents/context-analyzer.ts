@@ -7,29 +7,30 @@ export class ContextAnalyzer extends BaseAgent {
     const startTime = Date.now();
     
     const prompt = `
-Analiza esta solicitud de imagen y extrae metadatos estructurados en formato JSON:
+Analyze this image request and extract structured metadata in JSON format:
 
 INPUT: "${userInput}"
 
-Responde SOLO con un JSON válido que contenga:
+Respond ONLY with valid JSON containing:
 {
-  "tipo_contenido": "tipo de contenido (ej: post_social, banner, avatar, etc.)",
-  "industria": "industria o sector",
-  "objetivo": "objetivo principal (engagement, branding, informativo, etc.)",
-  "audiencia": "audiencia objetivo",
-  "estilo_visual": "estilo visual preferido",
-  "contexto_temporal": "contexto temporal o época",
-  "trending_topics": ["array", "de", "temas", "tendencia"]
+  "content_type": "content type (e.g: social_post, banner, avatar, etc.)",
+  "industry": "industry or sector",
+  "objective": "main objective (engagement, branding, informative, etc.)",
+  "audience": "target audience",
+  "visual_style": "preferred visual style",
+  "temporal_context": "temporal context or era",
+  "trending_topics": ["array", "of", "trending", "topics"]
 }
 
-Sé específico y relevante para redes sociales.
+Be specific and relevant for social media platforms.
+All values should be in English.
 `;
 
     try {
       const response = await this.callLLM(prompt, 0.3);
       const cleanResponse = response.replace(/```json|```/g, '').trim();
       
-      // Validar que es JSON válido
+      // Validate JSON
       JSON.parse(cleanResponse);
       
       return {
@@ -44,4 +45,3 @@ Sé específico y relevante para redes sociales.
     }
   }
 }
-

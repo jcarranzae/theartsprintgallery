@@ -3,9 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PromptAgentSystem } from '@/lib/prompt-agent-system';
 import { PromptGenerationRequest } from '@/types/agents';
 
+interface VariationsRequest extends PromptGenerationRequest {
+  count?: number;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body: PromptGenerationRequest & { count?: number } = await request.json();
+    const body: VariationsRequest = await request.json();
     
     if (!body.user_input || !body.platform) {
       return NextResponse.json(
@@ -23,13 +27,18 @@ export async function POST(request: NextRequest) {
     }
 
     const promptSystem = new PromptAgentSystem(apiKey);
-    const variations = await promptSystem.generateVariations(body, body.count || 3);
+    const count = body.count || 3;
+    
+    // Generate variations
+    const variations = await promptSystem.generateVariations(body, count);
 
     return NextResponse.json({
       success: true,
       data: {
         variations,
-        count: variations.length
+        total_variations: variations.length,
+        platform: body.platform,
+        flux_model: body.target_model || 'flux-pro'
       }
     });
 
@@ -44,4 +53,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

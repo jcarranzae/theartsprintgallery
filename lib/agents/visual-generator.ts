@@ -7,24 +7,25 @@ export class VisualGenerator extends BaseAgent {
     const startTime = Date.now();
     
     const prompt = `
-Basándote en estos metadatos sobre la imagen solicitada:
+Based on these metadata about the requested image:
 ${JSON.stringify(contextData, null, 2)}
 
-Genera un prompt visual base para generación de imágenes que incluya:
+Generate a base visual prompt for image generation that includes:
 
-1. SUJETO PRINCIPAL: Descripción clara del elemento central
-2. ACCIÓN/POSE: Lo que está haciendo o cómo está posicionado
-3. ENTORNO: Descripción del setting o fondo
-4. MOOD/ATMÓSFERA: Sensación o emoción que debe transmitir
-5. COMPOSICIÓN: Disposición de elementos en la imagen
-6. PALETA DE COLORES: Colores dominantes sugeridos
+1. MAIN SUBJECT: Clear description of the central element
+2. ACTION/POSE: What they're doing or how they're positioned
+3. ENVIRONMENT: Description of the setting or background
+4. MOOD/ATMOSPHERE: Feeling or emotion it should convey
+5. COMPOSITION: Arrangement of elements in the image
+6. COLOR PALETTE: Suggested dominant colors
 
-Formato de respuesta:
-"[SUJETO] [ACCIÓN] [ENTORNO], [ATMÓSFERA], [COMPOSICIÓN], [COLORES]"
+Response format:
+"[SUBJECT] [ACTION] [ENVIRONMENT], [ATMOSPHERE], [COMPOSITION], [COLORS]"
 
-Ejemplo: "A confident young woman laughing while holding a coffee cup in a modern café, warm and inviting atmosphere, rule of thirds composition with natural lighting, warm browns and soft creams"
+Example: "A confident young woman laughing while holding a coffee cup in a modern café, warm and inviting atmosphere, rule of thirds composition with natural lighting, warm browns and soft creams"
 
-Mantén el prompt conciso pero descriptivo, optimizado para ${contextData.estilo_visual}.
+Keep the prompt concise but descriptive, optimized for ${contextData.visual_style} style.
+Generate the prompt in English only.
 `;
 
     try {
@@ -42,4 +43,3 @@ Mantén el prompt conciso pero descriptivo, optimizado para ${contextData.estilo
     }
   }
 }
-

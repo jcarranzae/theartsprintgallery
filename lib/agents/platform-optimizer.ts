@@ -10,27 +10,27 @@ export class PlatformOptimizer extends BaseAgent {
     const platformConfig = PLATFORM_CONFIGS[platform];
     
     const prompt = `
-PROMPT ACTUAL: "${basePrompt}"
-PLATAFORMA: ${platform.toUpperCase()}
-CONTEXTO: ${JSON.stringify(contextData, null, 2)}
+CURRENT PROMPT: "${basePrompt}"
+PLATFORM: ${platform.toUpperCase()}
+CONTEXT: ${JSON.stringify(contextData, null, 2)}
 
-Configuración de la plataforma:
+Platform configuration:
 - Aspect Ratio: ${platformConfig.aspect_ratio}
-- Tendencias de estilo: ${platformConfig.style_trends.join(', ')}
-- Factores de engagement: ${platformConfig.engagement_factors.join(', ')}
-- Colores óptimos: ${platformConfig.optimal_colors.join(', ')}
-- Especificaciones técnicas: ${platformConfig.technical_specs.join(', ')}
+- Style trends: ${platformConfig.style_trends.join(', ')}
+- Engagement factors: ${platformConfig.engagement_factors.join(', ')}
+- Optimal colors: ${platformConfig.optimal_colors.join(', ')}
+- Technical specifications: ${platformConfig.technical_specs.join(', ')}
 
-Optimiza el prompt para maximizar el rendimiento en ${platform}:
+Optimize the prompt to maximize performance on ${platform}:
 
-1. Ajusta la composición para ${platformConfig.aspect_ratio}
-2. Incorpora elementos que generen engagement en esta plataforma
-3. Sugiere colores que funcionen bien en ${platform}
-4. Añade especificaciones técnicas específicas para esta plataforma
-5. Considera las tendencias actuales de ${platform}
+1. Adjust composition for ${platformConfig.aspect_ratio}
+2. Incorporate elements that generate engagement on this platform
+3. Suggest colors that work well on ${platform}
+4. Add platform-specific technical specifications
+5. Consider current ${platform} trends
 
-Responde con el prompt optimizado, incorporando estos elementos de manera natural.
-No agregues explicaciones, solo el prompt final.
+Respond with the optimized prompt in English, incorporating these elements naturally.
+Do not add explanations, just the final prompt.
 `;
 
     try {
@@ -48,4 +48,3 @@ No agregues explicaciones, solo el prompt final.
     }
   }
 }
-

@@ -17,9 +17,24 @@ export async function POST(request: NextRequest) {
 
     // Obtener API key del environment
     const apiKey = process.env.OPENAI_API_KEY;
+    
+    // DEBUGGING: Verificar API key (TEMPORAL - ELIMINAR EN PRODUCCIÓN)
+    console.log('🔑 API Key exists:', !!apiKey);
+    console.log('🔑 API Key length:', apiKey?.length || 0);
+    console.log('🔑 API Key starts with sk-:', apiKey?.startsWith('sk-') || false);
+    
     if (!apiKey) {
+      console.error('❌ OpenAI API key not found in environment variables');
       return NextResponse.json(
         { error: 'OpenAI API key not configured' },
+        { status: 500 }
+      );
+    }
+
+    if (!apiKey.startsWith('sk-')) {
+      console.error('❌ Invalid OpenAI API key format');
+      return NextResponse.json(
+        { error: 'Invalid OpenAI API key format' },
         { status: 500 }
       );
     }
@@ -46,4 +61,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

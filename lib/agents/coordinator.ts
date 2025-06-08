@@ -3,7 +3,6 @@ import { BaseAgent } from './base-agent';
 import { AgentResponse, Platform } from '@/types/agents';
 import { FluxModel } from '@/types/agents';
 
-
 interface CoordinatorInput {
   contextData: string;
   visualBase: string;
@@ -18,39 +17,39 @@ export class Coordinator extends BaseAgent {
     const startTime = Date.now();
     
     const prompt = `
-Como coordinador final, sintetiza estas respuestas de agentes especializados para crear el prompt optimal:
+As the final coordinator, synthesize these specialized agent responses to create the optimal prompt:
 
-CONTEXTO ANALIZADO:
+ANALYZED CONTEXT:
 ${input.contextData}
 
-PROMPT VISUAL BASE:
+BASE VISUAL PROMPT:
 ${input.visualBase}
 
-ESPECIFICACIONES TÉCNICAS:
+TECHNICAL SPECIFICATIONS:
 ${input.techSpecs}
 
-OPTIMIZACIÓN DE PLATAFORMA (${input.platform}):
+PLATFORM OPTIMIZATION (${input.platform}):
 ${input.platformOpts}
 
-MODELO OBJETIVO: ${input.targetModel}
+TARGET MODEL: ${input.targetModel}
 
-Tu tarea:
-1. Identifica elementos redundantes y elimínalos
-2. Resuelve cualquier conflicto entre especificaciones
-3. Mantén los elementos más importantes de cada agente
-4. Crea un prompt final coherente y optimizado
-5. Asegúrate de que sea apropiado para ${input.targetModel}
-6. Optimizado específicamente para ${input.platform}
+Your task:
+1. Identify redundant elements and eliminate them
+2. Resolve any conflicts between specifications
+3. Keep the most important elements from each agent
+4. Create a coherent and optimized final prompt
+5. Ensure it's appropriate for ${input.targetModel}
+6. Specifically optimized for ${input.platform}
 
-CRITERIOS DE PRIORIZACIÓN:
-- Claridad y coherencia (más importante)
-- Relevancia para la plataforma
-- Especificaciones técnicas apropiadas
-- Elementos de engagement
-- Brevedad sin perder detalle importante
+PRIORITIZATION CRITERIA:
+- Clarity and coherence (most important)
+- Platform relevance
+- Appropriate technical specifications
+- Engagement elements
+- Brevity without losing important detail
 
-Responde SOLO con el prompt final optimizado, sin explicaciones adicionales.
-El prompt debe ser directo y listo para usar en ${input.targetModel}.
+Respond ONLY with the final optimized prompt in English, without additional explanations.
+The prompt should be direct and ready to use in ${input.targetModel}.
 `;
 
     try {

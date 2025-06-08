@@ -26,6 +26,7 @@ export default function DashboardLayout({
     { href: '/dashboard/blogForm', icon: Rss, label: 'Blog' },
     { href: '/dashboard/createVideo', icon: Video, label: 'Generador de Video' },
     { href: '/dashboard/createImage', icon: Camera, label: 'Generador de Imágenes' },
+    { href: '/dashboard/kontext', icon: Camera, label: 'Generador/Editor de Imágenes' },
     { href: '/dashboard/music', icon: Music, label: 'Generador de Música' },
     { href: '/dashboard/tools/canny', icon: Scaling, label: 'Canny' },
     { href: '/dashboard/tools/fill', icon: Scaling, label: 'Relleno de Imágenes' },

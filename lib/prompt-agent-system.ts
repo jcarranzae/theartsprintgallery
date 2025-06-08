@@ -46,19 +46,19 @@ export class PromptAgentSystem {
     const agentResponses: AgentResponse[] = [];
 
     try {
-      // Paso 1: Análisis de contexto
+      // Step 1: Context analysis
       console.log('🔍 Analyzing context...');
       const contextResponse = await this.contextAnalyzer.process(request.user_input);
       agentResponses.push(contextResponse);
       
       const contextData: ContextData = JSON.parse(contextResponse.content);
 
-      // Paso 2: Generación visual base
+      // Step 2: Base visual generation
       console.log('🎨 Generating visual base...');
       const visualResponse = await this.visualGenerator.process(contextData);
       agentResponses.push(visualResponse);
 
-      // Paso 3: Procesamiento paralelo de especialistas
+      // Step 3: Parallel processing of specialists
       console.log('⚡ Processing Flux and Platform specialists in parallel...');
       const [fluxResponse, platformResponse] = await Promise.all([
         this.fluxSpecialist.process({
@@ -75,7 +75,7 @@ export class PromptAgentSystem {
 
       agentResponses.push(fluxResponse, platformResponse);
 
-      // Paso 4: Coordinación final
+      // Step 4: Final coordination
       console.log('🎯 Coordinating final Flux-optimized prompt...');
       const finalResponse = await this.coordinator.process({
         contextData: contextResponse.content,
@@ -88,10 +88,10 @@ export class PromptAgentSystem {
 
       agentResponses.push(finalResponse);
 
-      // Calcular métricas finales
+      // Calculate final metrics
       const totalProcessingTime = Date.now() - startTime;
       const avgConfidence = agentResponses.reduce((sum, resp) => sum + resp.confidence, 0) / agentResponses.length;
-      const estimatedTokens = Math.ceil(finalResponse.content.length / 4); // Estimación aproximada
+      const estimatedTokens = Math.ceil(finalResponse.content.length / 4); // Rough estimation
 
       return {
         final_prompt: finalResponse.content,
@@ -112,7 +112,7 @@ export class PromptAgentSystem {
     }
   }
 
-  // Método para generar múltiples variaciones
+  // Method to generate multiple variations
   async generateVariations(
     request: PromptGenerationRequest, 
     count: number = 3
@@ -122,7 +122,7 @@ export class PromptAgentSystem {
     for (let i = 0; i < count; i++) {
       console.log(`🔄 Generating variation ${i + 1}/${count}...`);
       
-      // Añadir variación al request original
+      // Add variation to original request
       const variationRequest = {
         ...request,
         user_input: `${request.user_input} (Variation ${i + 1}: focus on different creative approach)`
@@ -131,7 +131,7 @@ export class PromptAgentSystem {
       const result = await this.generatePrompt(variationRequest);
       variations.push(result);
       
-      // Pequeña pausa entre generaciones para evitar rate limits
+      // Small pause between generations to avoid rate limits
       if (i < count - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
@@ -140,25 +140,25 @@ export class PromptAgentSystem {
     return variations;
   }
 
-  // Método para optimizar un prompt existente
+  // Method to optimize existing prompt
   async optimizeExistingPrompt(
     existingPrompt: string,
     platform: Platform,
     targetModel: FluxModel = 'flux-pro'
   ): Promise<string> {
     try {
-      // Crear contexto sintético del prompt existente
+      // Create synthetic context from existing prompt
       const syntheticContext: ContextData = {
-        tipo_contenido: 'existing_prompt_optimization',
-        industria: 'general',
-        objetivo: 'optimization',
-        audiencia: 'general',
-        estilo_visual: 'existing',
-        contexto_temporal: 'current',
+        content_type: 'existing_prompt_optimization',
+        industry: 'general',
+        objective: 'optimization',
+        audience: 'general',
+        visual_style: 'existing',
+        temporal_context: 'current',
         trending_topics: ['optimization']
       };
 
-      // Aplicar especializaciones Flux
+      // Apply Flux specializations
       const [fluxResponse, platformResponse] = await Promise.all([
         this.fluxSpecialist.process({
           contextData: syntheticContext,
@@ -172,7 +172,7 @@ export class PromptAgentSystem {
         })
       ]);
 
-      // Coordinar resultado final
+      // Coordinate final result
       const finalResponse = await this.coordinator.process({
         contextData: JSON.stringify(syntheticContext),
         visualBase: existingPrompt,

@@ -5,12 +5,12 @@ type Platform = 'instagram' | 'youtube_thumbnail' | 'tiktok' | 'twitter' | 'link
 type FluxModel = 'flux-pro' | 'flux-dev' | 'flux-schnell';
 
 interface ContextData {
-  tipo_contenido: string;
-  industria: string;
-  objetivo: string;
-  audiencia: string;
-  estilo_visual: string;
-  contexto_temporal: string;
+  content_type: string;
+  industry: string;
+  objective: string;
+  audience: string;
+  visual_style: string;
+  temporal_context: string;
   trending_topics: string[];
 }
 
@@ -57,17 +57,17 @@ const PromptGeneratorUI: React.FC = () => {
     { 
       value: 'flux-pro', 
       label: 'FLUX.1 Pro', 
-      description: 'Máxima calidad y adherencia al prompt' 
+      description: 'Maximum quality and prompt adherence' 
     },
     { 
       value: 'flux-dev', 
       label: 'FLUX.1 Dev', 
-      description: 'Balance perfecto entre calidad y velocidad' 
+      description: 'Perfect balance between quality and speed' 
     },
     { 
       value: 'flux-schnell', 
       label: 'FLUX.1 Schnell', 
-      description: 'Generación ultrarrápida para iteración' 
+      description: 'Ultra-fast generation for iteration' 
     }
   ];
 
@@ -161,257 +161,280 @@ const PromptGeneratorUI: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            ⚡ Sistema de Agentes para Prompts Flux
-          </h1>
-          <p className="text-indigo-100">
-            Genera prompts optimizados para modelos Flux de Black Forest Labs usando agentes especializados
-          </p>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
-            {[
-              { id: 'single', label: '🎯 Prompt Único', icon: '🎯' },
-              { id: 'variations', label: '🔄 Variaciones', icon: '🔄' },
-              { id: 'optimize', label: '⚡ Optimizar', icon: '⚡' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {/* Configuration Panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                🎯 Plataforma de Destino
-              </label>
-              <select
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value as Platform)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                {platforms.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                🤖 Modelo Flux
-              </label>
-              <select
-                value={targetModel}
-                onChange={(e) => setTargetModel(e.target.value as FluxModel)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                {models.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label} - {m.description}
-                  </option>
-                ))}
-              </select>
-            </div>
+    <div 
+      className="min-h-screen w-full flex flex-col"
+      style={{
+        background: "linear-gradient(140deg, #1C228C 0%, #2C2A59 60%, #060826 100%)",
+      }}
+    >
+      <div className="flex-1 p-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-white mb-4">
+              ⚡ <span className="text-[#8C1AD9]">Flux Prompt</span> Agent System
+            </h1>
+            <p className="text-gray-300 text-lg">
+              Generate optimized prompts for Flux models using specialized AI agents
+            </p>
           </div>
 
-          {/* Tab Content */}
-          {activeTab === 'single' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ✍️ Describe la imagen que quieres generar
-                </label>
-                <textarea
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="Ejemplo: Una mujer joven haciendo yoga en la playa al amanecer con colores cálidos..."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                />
-              </div>
-              
-              <button
-                onClick={generateSinglePrompt}
-                disabled={isLoading || !userInput.trim()}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
-              >
-                {isLoading ? '🔄 Generando prompt Flux...' : '⚡ Generar Prompt Optimizado para Flux'}
-              </button>
+          {/* Main Container */}
+          <div className="bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden"
+            style={{
+              boxShadow: "0 0 32px 8px rgba(140, 26, 217, 0.3)",
+            }}
+          >
+            {/* Navigation Tabs */}
+            <div className="border-b border-[#8C1AD9]/30">
+              <nav className="flex">
+                {[
+                  { id: 'single', label: '🎯 Single Prompt', icon: '🎯' },
+                  { id: 'variations', label: '🔄 Variations', icon: '🔄' },
+                  { id: 'optimize', label: '⚡ Optimize', icon: '⚡' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`py-4 px-8 border-b-2 font-semibold text-sm transition-all duration-300 ${
+                      activeTab === tab.id
+                        ? 'border-[#8C1AD9] text-[#8C1AD9] bg-[#8C1AD9]/10'
+                        : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
 
-              {result && (
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      ✨ Prompt Generado
-                    </h3>
-                    <button
-                      onClick={() => copyToClipboard(result.final_prompt)}
-                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-md text-sm hover:bg-purple-200 transition-colors"
-                    >
-                      📋 Copiar
-                    </button>
+            <div className="p-8">
+              {/* Configuration Panel */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <label className="block text-[#8C1AD9] font-semibold text-lg mb-2">
+                    🎯 Target Platform
+                  </label>
+                  <select
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value as Platform)}
+                    className="w-full p-3 rounded-lg bg-black text-white border-2 border-[#8C1AD9] focus:ring-2 focus:ring-[#8C1AD9] outline-none transition-all"
+                  >
+                    {platforms.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-[#8C1AD9] font-semibold text-lg mb-2">
+                    🤖 Flux Model
+                  </label>
+                  <select
+                    value={targetModel}
+                    onChange={(e) => setTargetModel(e.target.value as FluxModel)}
+                    className="w-full p-3 rounded-lg bg-black text-white border-2 border-[#8C1AD9] focus:ring-2 focus:ring-[#8C1AD9] outline-none transition-all"
+                  >
+                    {models.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label} - {m.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === 'single' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[#8C1AD9] font-semibold text-lg mb-2">
+                      ✍️ Describe the image you want to generate
+                    </label>
+                    <textarea
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      placeholder="Example: A young woman doing yoga on the beach at sunrise with warm colors..."
+                      rows={4}
+                      className="w-full p-4 rounded-lg bg-black text-white border-2 border-[#8C1AD9] focus:ring-2 focus:ring-[#8C1AD9] outline-none transition-all placeholder:text-[#8C1AD9]/50 resize-none"
+                    />
                   </div>
                   
-                  <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
-                    <p className="text-gray-800 leading-relaxed">{result.final_prompt}</p>
-                  </div>
+                  <button
+                    onClick={generateSinglePrompt}
+                    disabled={isLoading || !userInput.trim()}
+                    className="w-full bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white py-3 px-6 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105"
+                    style={{
+                      boxShadow: "0 0 16px 3px #8C1AD9",
+                    }}
+                  >
+                    {isLoading ? '🔄 Generating Flux Prompt...' : '⚡ Generate Optimized Flux Prompt'}
+                  </button>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
-                    <div className="bg-white p-3 rounded-lg text-center">
-                      <div className="text-purple-600 font-semibold">⏱️ Tiempo</div>
-                      <div className="text-gray-600">{result.metadata.processing_time}ms</div>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg text-center">
-                      <div className="text-blue-600 font-semibold">🤖 Agentes</div>
-                      <div className="text-gray-600">{result.metadata.agents_used.length}</div>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg text-center">
-                      <div className="text-green-600 font-semibold">📊 Confianza</div>
-                      <div className="text-gray-600">{Math.round(result.metadata.confidence_score * 100)}%</div>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg text-center">
-                      <div className="text-orange-600 font-semibold">🎯 Plataforma</div>
-                      <div className="text-gray-600 capitalize">{platform}</div>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg text-center">
-                      <div className="text-indigo-600 font-semibold">⚡ Flux</div>
-                      <div className="text-gray-600">{result.metadata.flux_model}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'variations' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ✍️ Describe la imagen base para variaciones
-                </label>
-                <textarea
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="Describe la imagen base y el sistema generará 3 variaciones diferentes..."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                />
-              </div>
-              
-              <button
-                onClick={generateVariations}
-                disabled={isLoading || !userInput.trim()}
-                className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-green-700 hover:to-teal-700 transition-all duration-200"
-              >
-                {isLoading ? '🔄 Generando variaciones...' : '🎨 Generar 3 Variaciones'}
-              </button>
-
-              {variations.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    🎨 Variaciones Generadas
-                  </h3>
-                  {variations.map((variation, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-medium text-gray-700">
-                          Variación {index + 1}
-                        </h4>
+                  {result && (
+                    <div className="bg-zinc-800 rounded-lg p-6 border border-[#8C1AD9]/30">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-semibold text-[#8C1AD9]">
+                          ✨ Generated Prompt
+                        </h3>
                         <button
-                          onClick={() => copyToClipboard(variation.final_prompt)}
-                          className="px-3 py-1 bg-teal-100 text-teal-700 rounded-md text-sm hover:bg-teal-200 transition-colors"
+                          onClick={() => copyToClipboard(result.final_prompt)}
+                          className="px-4 py-2 bg-[#8C1AD9]/20 text-[#8C1AD9] rounded-md text-sm hover:bg-[#8C1AD9]/30 transition-colors border border-[#8C1AD9]/50"
                         >
-                          📋 Copiar
+                          📋 Copy
                         </button>
                       </div>
-                      <div className="bg-white p-3 rounded-lg border border-gray-200">
-                        <p className="text-gray-800 text-sm leading-relaxed">
-                          {variation.final_prompt}
-                        </p>
+                      
+                      <div className="bg-black p-4 rounded-lg border border-[#8C1AD9]/20 mb-4">
+                        <p className="text-gray-100 leading-relaxed">{result.final_prompt}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
+                        <div className="bg-black/50 p-3 rounded-lg text-center border border-[#8C1AD9]/20">
+                          <div className="text-[#8C1AD9] font-semibold">⏱️ Time</div>
+                          <div className="text-gray-300">{result.metadata.processing_time}ms</div>
+                        </div>
+                        <div className="bg-black/50 p-3 rounded-lg text-center border border-[#8C1AD9]/20">
+                          <div className="text-[#8C1AD9] font-semibold">🤖 Agents</div>
+                          <div className="text-gray-300">{result.metadata.agents_used.length}</div>
+                        </div>
+                        <div className="bg-black/50 p-3 rounded-lg text-center border border-[#8C1AD9]/20">
+                          <div className="text-[#8C1AD9] font-semibold">📊 Confidence</div>
+                          <div className="text-gray-300">{Math.round(result.metadata.confidence_score * 100)}%</div>
+                        </div>
+                        <div className="bg-black/50 p-3 rounded-lg text-center border border-[#8C1AD9]/20">
+                          <div className="text-[#8C1AD9] font-semibold">🎯 Platform</div>
+                          <div className="text-gray-300 capitalize">{platform}</div>
+                        </div>
+                        <div className="bg-black/50 p-3 rounded-lg text-center border border-[#8C1AD9]/20">
+                          <div className="text-[#8C1AD9] font-semibold">⚡ Flux</div>
+                          <div className="text-gray-300">{result.metadata.flux_model}</div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'variations' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[#8C1AD9] font-semibold text-lg mb-2">
+                      ✍️ Describe the base image for variations
+                    </label>
+                    <textarea
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      placeholder="Describe the base image and the system will generate 3 different variations..."
+                      rows={4}
+                      className="w-full p-4 rounded-lg bg-black text-white border-2 border-[#8C1AD9] focus:ring-2 focus:ring-[#8C1AD9] outline-none transition-all placeholder:text-[#8C1AD9]/50 resize-none"
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={generateVariations}
+                    disabled={isLoading || !userInput.trim()}
+                    className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105"
+                    style={{
+                      boxShadow: "0 0 16px 3px rgba(34, 197, 94, 0.5)",
+                    }}
+                  >
+                    {isLoading ? '🔄 Generating variations...' : '🎨 Generate 3 Variations'}
+                  </button>
+
+                  {variations.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold text-[#8C1AD9]">
+                        🎨 Generated Variations
+                      </h3>
+                      {variations.map((variation, index) => (
+                        <div key={index} className="bg-zinc-800 rounded-lg p-4 border border-[#8C1AD9]/30">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-semibold text-gray-200">
+                              Variation {index + 1}
+                            </h4>
+                            <button
+                              onClick={() => copyToClipboard(variation.final_prompt)}
+                              className="px-3 py-1 bg-teal-600/20 text-teal-400 rounded-md text-sm hover:bg-teal-600/30 transition-colors border border-teal-400/50"
+                            >
+                              📋 Copy
+                            </button>
+                          </div>
+                          <div className="bg-black p-3 rounded-lg border border-[#8C1AD9]/20">
+                            <p className="text-gray-100 text-sm leading-relaxed">
+                              {variation.final_prompt}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'optimize' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[#8C1AD9] font-semibold text-lg mb-2">
+                      📝 Existing prompt to optimize
+                    </label>
+                    <textarea
+                      value={existingPrompt}
+                      onChange={(e) => setExistingPrompt(e.target.value)}
+                      placeholder="Paste your existing prompt here and we'll optimize it for the selected platform..."
+                      rows={4}
+                      className="w-full p-4 rounded-lg bg-black text-white border-2 border-[#8C1AD9] focus:ring-2 focus:ring-[#8C1AD9] outline-none transition-all placeholder:text-[#8C1AD9]/50 resize-none"
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={optimizePrompt}
+                    disabled={isLoading || !existingPrompt.trim()}
+                    className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105"
+                    style={{
+                      boxShadow: "0 0 16px 3px rgba(251, 146, 60, 0.5)",
+                    }}
+                  >
+                    {isLoading ? '🔄 Optimizing...' : '⚡ Optimize Prompt'}
+                  </button>
+
+                  {optimizedPrompt && (
+                    <div className="space-y-4">
+                      <div className="bg-zinc-800 rounded-lg p-6 border border-[#8C1AD9]/30">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold text-gray-300">
+                            📝 Original Prompt
+                          </h3>
+                        </div>
+                        <div className="bg-black p-4 rounded-lg border border-gray-600">
+                          <p className="text-gray-400 leading-relaxed">{existingPrompt}</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-lg p-6 border border-orange-400/30">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold text-orange-300">
+                            ⚡ Optimized Prompt
+                          </h3>
+                          <button
+                            onClick={() => copyToClipboard(optimizedPrompt)}
+                            className="px-4 py-2 bg-orange-600/20 text-orange-400 rounded-md text-sm hover:bg-orange-600/30 transition-colors border border-orange-400/50"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="bg-black p-4 rounded-lg border border-orange-400/20">
+                          <p className="text-gray-100 leading-relaxed">{optimizedPrompt}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-
-          {activeTab === 'optimize' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📝 Prompt existente para optimizar
-                </label>
-                <textarea
-                  value={existingPrompt}
-                  onChange={(e) => setExistingPrompt(e.target.value)}
-                  placeholder="Pega aquí tu prompt existente y lo optimizaremos para la plataforma seleccionada..."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                />
-              </div>
-              
-              <button
-                onClick={optimizePrompt}
-                disabled={isLoading || !existingPrompt.trim()}
-                className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-orange-700 hover:to-red-700 transition-all duration-200"
-              >
-                {isLoading ? '🔄 Optimizando...' : '⚡ Optimizar Prompt'}
-              </button>
-
-              {optimizedPrompt && (
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        📝 Prompt Original
-                      </h3>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <p className="text-gray-600 leading-relaxed">{existingPrompt}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        ⚡ Prompt Optimizado
-                      </h3>
-                      <button
-                        onClick={() => copyToClipboard(optimizedPrompt)}
-                        className="px-3 py-1 bg-orange-100 text-orange-700 rounded-md text-sm hover:bg-orange-200 transition-colors"
-                      >
-                        📋 Copiar
-                      </button>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border border-orange-200">
-                      <p className="text-gray-800 leading-relaxed">{optimizedPrompt}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
