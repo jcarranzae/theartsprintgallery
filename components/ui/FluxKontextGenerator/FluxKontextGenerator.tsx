@@ -9,8 +9,8 @@ import KontextAdvancedSettings from './KontextAdvancedSettings';
 import KontextImageViewer from './KontextImageViewer';
 
 const models = [
-  { label: 'FLUX Kontext Pro', value: 'kontext-pro', description: 'High-quality contextual image generation' },
-  { label: 'FLUX Kontext Max', value: 'kontext-max', description: 'Maximum quality and context understanding' },
+  { label: 'FLUX Kontext Pro', value: 'kontext-pro', description: 'High-quality contextual image generation with optimized speed' },
+  { label: 'FLUX Kontext Max', value: 'kontext-max', description: 'Maximum quality and context understanding for complex scenes' },
 ];
 
 const aspectRatios = [
@@ -33,6 +33,7 @@ export default function FluxKontextGenerator() {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [generationStatus, setGenerationStatus] = useState<string>('');
   const [generationProgress, setGenerationProgress] = useState<number>(0);
+  const [usingProxy, setUsingProxy] = useState<boolean>(false);
 
   // Advanced settings
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -42,20 +43,47 @@ export default function FluxKontextGenerator() {
   const [promptUpsampling, setPromptUpsampling] = useState<boolean>(false);
   const [safetyTolerance, setSafetyTolerance] = useState<number>(2);
 
+  // Función para probar acceso a imagen
+  const testImageAccess = (url: string): Promise<{ success: boolean, error?: string }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+
+      const timeout = setTimeout(() => {
+        resolve({ success: false, error: 'Timeout' });
+      }, 3000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve({ success: true });
+      };
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve({ success: false, error: 'CORS/Load error' });
+      };
+
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+    });
+  };
+
   const handleSubmit = async () => {
-    if (!prompt) return alert('El prompt es obligatorio');
+    if (!prompt) return alert('Please enter a prompt');
     setLoading(true);
     setResult(null);
     setTaskId(null);
     setGenerationStatus('Initializing...');
     setGenerationProgress(0);
+    setUsingProxy(false);
     setShowAdvanced(false);
 
     // Convertir imagen a base64 si existe
     let base64Image = null;
     if (imageFile) {
+      setGenerationStatus('Processing context image...');
       base64Image = await toBase64(imageFile);
     } else if (selectedImageUrl) {
+      setGenerationStatus('Processing selected image...');
       // Si se seleccionó una imagen de la galería, convertirla a base64
       try {
         const response = await fetch(selectedImageUrl);
@@ -64,26 +92,33 @@ export default function FluxKontextGenerator() {
         base64Image = await toBase64(file);
       } catch (error) {
         console.error('Error converting selected image:', error);
+        alert('Error processing selected image. Please try uploading a new image.');
+        setLoading(false);
+        return;
       }
     }
 
-    const payload = {
-      prompt,
-      input_image: base64Image,
-      seed,
-      aspect_ratio: aspectRatio,
-      output_format: outputFormat,
-      prompt_upsampling: promptUpsampling,
-      safety_tolerance: safetyTolerance,
-      webhook_url: null,
-      webhook_secret: null
-    };
-
     try {
-      // Elegir endpoint según el modelo
-      const endpoint = selectedModel === 'kontext-pro' 
-        ? '/api/generate-kontext-pro' 
+      // Paso 1: Generar imagen
+      setGenerationStatus('Creating generation task...');
+
+      const endpoint = selectedModel === 'kontext-pro'
+        ? '/api/generate-kontext-pro'
         : '/api/generate-kontext-max';
+
+      const payload = {
+        prompt,
+        input_image: base64Image, // ← CLAVE: Incluir imagen de contexto
+        seed,
+        aspect_ratio: aspectRatio,
+        output_format: outputFormat,
+        prompt_upsampling: promptUpsampling,
+        safety_tolerance: safetyTolerance,
+        webhook_url: null,
+        webhook_secret: null
+      };
+
+      console.log('🖼️ Payload includes context image:', !!base64Image);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -92,14 +127,10 @@ export default function FluxKontextGenerator() {
       });
 
       const data = await response.json();
-      
+
       if (!data.success) {
         setLoading(false);
-    if (!result) {
-      setGenerationStatus('');
-      setGenerationProgress(0);
-      setTaskId(null);
-    }
+        setGenerationStatus(`Error: ${data.error}`);
         return alert(`Error: ${data.error}\nDetails: ${data.details || 'Unknown error'}`);
       }
 
@@ -107,30 +138,45 @@ export default function FluxKontextGenerator() {
       setTaskId(id);
       setGenerationStatus('Generation started...');
 
-      // Iniciar polling para obtener resultado
+      // Paso 2: Polling para obtener resultado
       for (let i = 0; i < 60; i++) {
         await new Promise((res) => setTimeout(res, 3000)); // 3 segundos entre checks
-        
+
         const pollResponse = await fetch(`/api/check-kontext/${id}`);
         const pollData = await pollResponse.json();
-        
+
         if (pollData.success) {
           // Actualizar estado y progreso
           setGenerationStatus(pollData.status);
           setGenerationProgress(pollData.progress * 100);
-          
-          console.log(`Poll ${i + 1}: Status = ${pollData.status}, Progress = ${pollData.progress}`);
-          
+
           // Manejar estados específicos de BFL
           if (pollData.completed && pollData.status === 'Ready') {
-            if (pollData.result && pollData.result.sample) {
-              // Resultado como base64
-              setResult(`data:image/${outputFormat};base64,${pollData.result.sample}`);
-            } else if (pollData.result && pollData.result.url) {
-              // Resultado como URL directa
-              setResult(pollData.result.url);
+            if (pollData.imageData) {
+              setGenerationStatus('Processing image...');
+
+              // Probar acceso directo primero
+              const directTest = await testImageAccess(pollData.imageData);
+
+              if (directTest.success) {
+                console.log('✅ Direct image access works');
+                setResult(pollData.imageData);
+                setGenerationStatus('Completed!');
+              } else {
+                console.log('❌ Direct access failed, using proxy');
+                setUsingProxy(true);
+                setGenerationStatus('Using proxy for image...');
+
+                // Usar proxy
+                const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(pollData.imageData)}`;
+                setResult(proxyUrl);
+                setGenerationStatus('Completed via proxy!');
+              }
+
+              setGenerationProgress(100);
+            } else {
+              throw new Error('No image data in completed response');
             }
-            setGenerationStatus('Completed!');
             break;
           } else if (pollData.moderated) {
             setGenerationStatus(`Moderated: ${pollData.status}`);
@@ -143,7 +189,7 @@ export default function FluxKontextGenerator() {
           }
           // Si está pending, continuar polling
         }
-        
+
         if (i === 59) {
           setGenerationStatus('Timeout');
           alert('Generation timeout. Please try again.');
@@ -151,10 +197,16 @@ export default function FluxKontextGenerator() {
       }
     } catch (error) {
       console.error('Generation error:', error);
-      alert('Error durante la generación. Por favor, intenta de nuevo.');
+      setGenerationStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert('Error during generation. Please try again.');
     }
 
     setLoading(false);
+    if (!result) {
+      setGenerationStatus('');
+      setGenerationProgress(0);
+      setTaskId(null);
+    }
   };
 
   const handleAdvancedChange = (field: string, value: any) => {
@@ -185,16 +237,16 @@ export default function FluxKontextGenerator() {
         </div>
 
         <div className="text-[#8C1AD9] font-semibold text-lg">
-          <KontextModelSelector 
+          <KontextModelSelector
             models={models}
-            value={selectedModel} 
-            onChange={setSelectedModel} 
+            value={selectedModel}
+            onChange={setSelectedModel}
           />
         </div>
 
         <div className="text-[#8C1AD9] font-semibold text-lg">
-          <KontextImageUploader 
-            imageFile={imageFile} 
+          <KontextImageUploader
+            imageFile={imageFile}
             setImageFile={setImageFile}
             selectedImageUrl={selectedImageUrl}
             setSelectedImageUrl={setSelectedImageUrl}
@@ -202,9 +254,9 @@ export default function FluxKontextGenerator() {
         </div>
 
         <div className="text-[#8C1AD9] font-semibold text-lg">
-          <KontextPromptInput 
-            prompt={prompt} 
-            onChangePrompt={setPrompt} 
+          <KontextPromptInput
+            prompt={prompt}
+            onChangePrompt={setPrompt}
           />
         </div>
 
@@ -246,33 +298,44 @@ export default function FluxKontextGenerator() {
             <div className="mb-4">
               <p className="text-[#8C1AD9] font-semibold text-lg">Task ID: {taskId}</p>
               <p className="text-gray-300 text-sm mt-1">Status: {generationStatus}</p>
+              {(imageFile || selectedImageUrl) && (
+                <p className="text-cyan-400 text-sm mt-1">🖼️ Using context image</p>
+              )}
             </div>
-            
+
             {/* Progress Bar */}
             <div className="w-full bg-zinc-800 rounded-full h-3 mb-4">
-              <div 
+              <div
                 className="bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] h-3 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${generationProgress}%` }}
               ></div>
             </div>
             <p className="text-gray-400 text-sm">{Math.round(generationProgress)}% complete</p>
-            
+
             <div className="mt-4 flex items-center justify-center gap-2">
               <Loader2 className="animate-spin text-[#8C1AD9]" size={20} />
               <span className="text-gray-300 text-sm">
                 Generating with {selectedModel === 'kontext-pro' ? 'Kontext Pro' : 'Kontext Max'}...
               </span>
             </div>
+
+            {usingProxy && (
+              <div className="mt-2 text-yellow-400 text-sm">
+                🔄 Using proxy for image delivery
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Panel derecho - Vista previa */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <KontextImageViewer 
-          imageUrl={result} 
+        <KontextImageViewer
+          imageUrl={result}
           prompt={prompt}
           model={selectedModel}
+          usingProxy={usingProxy}
+          taskId={taskId}
         />
       </div>
     </div>

@@ -16,11 +16,17 @@ export default function KontextPromptInput({ prompt, onChangePrompt }: KontextPr
         onChange={(e) => onChangePrompt(e.target.value)}
         rows={4}
         className="w-full p-3 rounded-lg bg-zinc-900 text-white border-2 border-[#8C1AD9] focus:ring-2 focus:ring-[#8C1AD9] shadow-md outline-none transition-all placeholder:text-[#8C1AD9]/50 resize-none"
-        placeholder="Describe the image context and details you want to generate. Be specific about the scene, lighting, style, and any contextual elements..."
+        placeholder="Describe the contextual scene you want to generate. Be specific about the environment, lighting, style, and any interactions between elements..."
       />
-      <p className="text-gray-400 text-sm">
-        💡 Tip: Kontext models excel at understanding complex scenes and contextual relationships. Be descriptive about the environment and interactions.
-      </p>
+      <div className="text-gray-400 text-sm space-y-1">
+        <p className="flex items-center gap-2">
+          <span className="text-[#8C1AD9]">💡</span>
+          <span><strong>Tip:</strong> Kontext models excel at understanding complex scenes and contextual relationships</span>
+        </p>
+        <p className="text-xs text-gray-500">
+          Examples: "A bustling cyberpunk market at night with vendors selling glowing tech gadgets under neon signs" or "A serene Japanese garden with cherry blossoms reflecting in a koi pond at golden hour"
+        </p>
+      </div>
     </div>
   );
 }

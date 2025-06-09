@@ -1,23 +1,36 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
+
 interface SaveButtonProps {
   onClick: () => void;
-  loading?: boolean;
+  loading: boolean;
   label?: string;
+  className?: string;
 }
 
-export default function SaveButton({ onClick, loading = false, label = 'Guardar' }: SaveButtonProps) {
+export default function SaveButton({
+  onClick,
+  loading,
+  label = 'Save',
+  className = ''
+}: SaveButtonProps) {
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      className="bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white px-4 py-2 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] disabled:opacity-50 transition-all duration-300 hover:scale-105 shadow-lg"
-      style={{
-        boxShadow: "0 0 16px 3px #8C1AD9",
-        borderRadius: "12px",
-      }}
+      className={`px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${className}`}
     >
-      {loading ? 'Guardando...' : label}
+      {loading ? (
+        <>
+          <Loader2 className="animate-spin" size={16} />
+          Saving...
+        </>
+      ) : (
+        <>
+          💾 {label}
+        </>
+      )}
     </button>
   );
 }

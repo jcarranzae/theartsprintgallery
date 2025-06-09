@@ -109,8 +109,17 @@ export default function KontextAdvancedSettings({
               <span className="text-cyan-300 font-semibold">Prompt Upsampling</span>
             </label>
             <p className="text-pink-300 text-sm mt-1 ml-6">
-              Enhance prompt with additional descriptive details
+              Enhance prompt with additional descriptive details automatically
             </p>
+          </div>
+
+          <div className="bg-gradient-to-r from-fuchsia-900/20 to-cyan-900/20 rounded-lg p-4 border border-fuchsia-500/30">
+            <h4 className="text-cyan-300 font-semibold mb-2">🎯 Kontext Settings Guide</h4>
+            <div className="text-xs text-gray-300 space-y-1">
+              <p><strong>Seed:</strong> Lower values = more consistent results, higher = more variation</p>
+              <p><strong>Safety:</strong> Higher tolerance allows more creative freedom</p>
+              <p><strong>Upsampling:</strong> Automatically improves your prompt for better results</p>
+            </div>
           </div>
         </div>
       )}
