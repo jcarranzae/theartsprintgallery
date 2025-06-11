@@ -39,6 +39,7 @@
     "drizzle-orm": "^0.40.0",
     "jodit-react": "^5.2.18",
     "jose": "^6.0.8",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.479.0",
     "next": "15.2.2-canary.3",
     "openai": "^5.1.1",
@@ -60,6 +61,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
     "tsx": "^4.19.3"
   }
 }
