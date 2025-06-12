@@ -1,4 +1,4 @@
-// app/api/kling-tasks/route.ts
+// app/api/kling-tasks/route.ts - Con autenticación JWT corregida
 import { NextRequest, NextResponse } from 'next/server';
 import { getKlingAuthHeader } from '@/lib/klingJwtUtils';
 
@@ -27,11 +27,25 @@ export async function GET(request: NextRequest) {
 
     console.log(`📋 Fetching Kling tasks - Page: ${pageNum}, Size: ${pageSize}`);
 
-    // Generate JWT token for this request
-    const authHeader = getKlingAuthHeader();
+    // Generate JWT token for this request (usando la implementación corregida)
+    let authHeader;
+    try {
+      authHeader = getKlingAuthHeader();
+      console.log('✅ Successfully generated JWT token for tasks list');
+    } catch (authError) {
+      console.error('❌ Failed to generate JWT token:', authError);
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication Error',
+        details: 'Failed to generate authentication token. Check your KLING_ACCESS_KEY and KLING_SECRET_KEY environment variables.'
+      }, { status: 500 });
+    }
 
     // Make request to Kling API
-    const response = await fetch(`https://api-singapore.klingai.com/v1/videos/text2video?pageNum=${pageNum}&pageSize=${pageSize}`, {
+    const apiUrl = `https://api-singapore.klingai.com/v1/videos/text2video?pageNum=${pageNum}&pageSize=${pageSize}`;
+    console.log('🌐 Making request to:', apiUrl);
+
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -41,8 +55,22 @@ export async function GET(request: NextRequest) {
 
     const responseData = await response.json();
 
+    console.log('📥 Kling Tasks Response Status:', response.status);
+    console.log('📥 Kling Tasks Response Data:', JSON.stringify(responseData, null, 2));
+
     if (!response.ok) {
       console.error('❌ Kling Tasks API Error:', responseData);
+
+      // Check if it's an authentication error
+      if (response.status === 401 || response.status === 403) {
+        return NextResponse.json({
+          success: false,
+          error: 'Authentication Failed',
+          details: 'Invalid API credentials. Please check your KLING_ACCESS_KEY and KLING_SECRET_KEY.',
+          code: responseData.code
+        }, { status: 401 });
+      }
+
       return NextResponse.json({
         success: false,
         error: 'Kling API Error',
@@ -62,7 +90,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Process and format the tasks
-    const tasks = responseData.data.map((task: any) => {
+    const rawTasks = responseData.data || [];
+    console.log(`📋 Processing ${rawTasks.length} raw tasks from API`);
+
+    const tasks = rawTasks.map((task: any) => {
       let progress = 0;
       let completed = false;
       let failed = false;
@@ -94,7 +125,7 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      return {
+      const processedTask = {
         task_id: task.task_id,
         status: task.task_status,
         status_message: task.task_status_msg,
@@ -106,9 +137,28 @@ export async function GET(request: NextRequest) {
         external_task_id: task.task_info?.external_task_id,
         videoData: videoData
       };
+
+      console.log(`📝 Processed task ${task.task_id}: ${task.task_status} (${Math.round(progress * 100)}%)`);
+
+      return processedTask;
     });
 
-    console.log(`✅ Retrieved ${tasks.length} Kling tasks`);
+    interface Task {
+      completed: boolean;
+      failed: boolean;
+    }
+
+    const completedTasks = tasks.filter((t: Task) => t.completed).length;
+    const processingTasks = tasks.filter((t: Task) => !t.completed && !t.failed).length;
+    const failedTasks = tasks.filter((t: Task) => t.failed).length;
+
+    console.log(`✅ Successfully retrieved ${tasks.length} Kling tasks:`, {
+      completed: completedTasks,
+      processing: processingTasks,
+      failed: failedTasks,
+      page: pageNum,
+      pageSize: pageSize
+    });
 
     return NextResponse.json({
       success: true,
@@ -117,11 +167,27 @@ export async function GET(request: NextRequest) {
         pageNum: pageNum,
         pageSize: pageSize,
         total: tasks.length
+      },
+      summary: {
+        total: tasks.length,
+        completed: completedTasks,
+        processing: processingTasks,
+        failed: failedTasks
       }
     });
 
   } catch (error) {
     console.error('❌ List Kling Tasks Error:', error);
+
+    // Check if it's a JWT generation error
+    if (error instanceof Error && error.message.includes('KLING_ACCESS_KEY')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Configuration Error',
+        details: 'Missing Kling API credentials. Please set KLING_ACCESS_KEY and KLING_SECRET_KEY environment variables.'
+      }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Internal Server Error',

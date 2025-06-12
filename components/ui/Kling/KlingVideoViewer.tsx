@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import SaveButton from '../saveButton';
 import { saveKlingVideoToSupabase } from '@/lib/saveVideoToSupabase';
+import { getProxiedVideoUrl, handleVideoLoadError, debugVideoUrl } from '@/lib/videoUrlUtils';
 
 interface KlingVideoViewerProps {
     videoUrl: string | null;
@@ -22,8 +23,47 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
     aspectRatio = '16:9'
 }) => {
     const [saving, setSaving] = useState(false);
-    const [savedUrl, setSavedUrl] = useState < string | null > (null);
+    const [savedUrl, setSavedUrl] = useState<string | null>(null);
     const [saved, setSavedState] = useState(false);
+    const [videoError, setVideoError] = useState<string | null>(null);
+    const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+
+    // Initialize video URL when videoUrl prop changes
+    React.useEffect(() => {
+        if (videoUrl) {
+            const proxiedUrl = getProxiedVideoUrl(videoUrl);
+            setCurrentVideoUrl(proxiedUrl);
+            setVideoError(null);
+            setRetryCount(0);
+
+            // Debug info
+            console.log('🎬 Video URL Debug:', debugVideoUrl(videoUrl));
+        }
+    }, [videoUrl]);
+
+    const handleVideoError = useCallback((error: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+        console.error('❌ Video playback error:', error);
+        setVideoError('Failed to load video');
+
+        if (videoUrl && retryCount < 2) {
+            const fallbackUrl = handleVideoLoadError(videoUrl, error.nativeEvent);
+            if (fallbackUrl && fallbackUrl !== currentVideoUrl) {
+                console.log(`🔄 Retry ${retryCount + 1}: Trying fallback URL:`, fallbackUrl);
+                setCurrentVideoUrl(fallbackUrl);
+                setRetryCount(prev => prev + 1);
+                setVideoError(null);
+            }
+        } else {
+            console.error('❌ All video retry attempts failed');
+            setVideoError('Unable to load video after multiple attempts');
+        }
+    }, [videoUrl, currentVideoUrl, retryCount]);
+
+    const handleVideoLoad = useCallback(() => {
+        console.log('✅ Video loaded successfully:', currentVideoUrl);
+        setVideoError(null);
+    }, [currentVideoUrl]);
 
     const handleSave = async () => {
         if (!videoUrl) return;
@@ -47,7 +87,9 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
             if (success && url) {
                 setSavedUrl(url);
                 setSavedState(true);
+                console.log('✅ Video saved to Supabase:', url);
             } else {
+                console.error('❌ Failed to save video:', error);
                 if (error === 'Usuario no autenticado') {
                     alert('You must be authenticated to save videos. Please log in.');
                 } else {
@@ -56,7 +98,7 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
             }
         } catch (error) {
             setSaving(false);
-            console.error('Save error:', error);
+            console.error('❌ Save error:', error);
             alert('Error saving video');
         }
     };
@@ -65,14 +107,16 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
         if (!videoUrl) return;
 
         try {
-            let downloadUrl = videoUrl;
+            console.log('⬇️ Starting download for URL:', videoUrl);
 
-            // If it's an external URL (Kling), use proxy to avoid CORS issues
-            if (videoUrl.startsWith('http') && !videoUrl.startsWith(window.location.origin)) {
-                downloadUrl = `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`;
-            }
+            // Use the same proxied URL for download
+            const downloadUrl = getProxiedVideoUrl(videoUrl);
 
             const response = await fetch(downloadUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
 
@@ -84,9 +128,10 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
             document.body.removeChild(link);
 
             URL.revokeObjectURL(url);
+            console.log('✅ Download completed successfully');
         } catch (error) {
-            console.error('Download error:', error);
-            alert('Download failed. Try right-click → Save video as...');
+            console.error('❌ Download error:', error);
+            alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}. Try right-click → Save video as...`);
         }
     };
 
@@ -105,29 +150,55 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
 
     return (
         <div className="relative w-full h-[600px] flex items-center justify-center">
-            {videoUrl ? (
+            {videoUrl && currentVideoUrl ? (
                 <>
                     <div className={`relative ${getAspectRatioClass()} max-w-full max-h-[600px] rounded-lg overflow-hidden shadow-2xl border border-[#8C1AD9]/30`}
                         style={{
                             boxShadow: "0 0 32px 8px rgba(140, 26, 217, 0.2)",
                         }}
                     >
-                        <video
-                            src={videoUrl.startsWith('http') && !videoUrl.startsWith(window.location.origin)
-                                ? `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
-                                : videoUrl}
-                            controls
-                            autoPlay
-                            muted
-                            loop
-                            className="w-full h-full object-cover"
-                            onLoadedData={() => console.log('🎬 Kling video loaded successfully')}
-                            onError={(error) => {
-                                console.error('❌ Kling video load error:', error);
-                            }}
-                        >
-                            Your browser does not support the video tag.
-                        </video>
+                        {videoError ? (
+                            <div className="w-full h-full flex items-center justify-center bg-red-900/20 border border-red-500/30">
+                                <div className="text-center p-6">
+                                    <div className="text-red-400 text-4xl mb-4">❌</div>
+                                    <h3 className="text-red-400 text-lg font-semibold mb-2">Video Load Error</h3>
+                                    <p className="text-gray-300 text-sm mb-4">{videoError}</p>
+                                    <button
+                                        onClick={() => {
+                                            setVideoError(null);
+                                            setRetryCount(0);
+                                            if (videoUrl) {
+                                                setCurrentVideoUrl(getProxiedVideoUrl(videoUrl));
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                                    >
+                                        🔄 Retry
+                                    </button>
+                                    <div className="mt-4 text-xs text-gray-400">
+                                        <p>Retry count: {retryCount}/2</p>
+                                        <p>Original URL: {videoUrl.substring(0, 50)}...</p>
+                                        <p>Current URL: {currentVideoUrl.substring(0, 50)}...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <video
+                                key={currentVideoUrl} // Force re-render on URL change
+                                src={currentVideoUrl}
+                                controls
+                                autoPlay
+                                muted
+                                loop
+                                className="w-full h-full object-cover"
+                                onLoadedData={handleVideoLoad}
+                                onError={handleVideoError}
+                                onLoadStart={() => console.log('🔄 Video loading started...')}
+                                onCanPlay={() => console.log('✅ Video can play')}
+                            >
+                                Your browser does not support the video tag.
+                            </video>
+                        )}
                     </div>
 
                     {/* Control Buttons */}
@@ -160,12 +231,17 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
                         <div className="bg-black/70 backdrop-blur-sm border border-green-500/30 text-green-200 px-3 py-1 rounded-lg text-sm">
                             📐 {aspectRatio}
                         </div>
+                        {retryCount > 0 && (
+                            <div className="bg-black/70 backdrop-blur-sm border border-yellow-500/30 text-yellow-200 px-3 py-1 rounded-lg text-sm">
+                                🔄 Retry {retryCount}/2
+                            </div>
+                        )}
                     </div>
 
                     {/* Success Message */}
                     {saved && (
                         <div className="absolute bottom-16 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
-                            <p className="text-sm">Video saved successfully!</p>
+                            <p className="text-sm">✅ Video saved successfully!</p>
                             <a
                                 href="/dashboard/kling"
                                 className="block text-center hover:text-green-200 text-white font-semibold text-sm mt-1"

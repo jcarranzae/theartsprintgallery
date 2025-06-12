@@ -1,11 +1,11 @@
-// app/api/generate-kling/route.ts
+// app/api/generate-kling/route.ts - Con autenticación JWT corregida
 import { NextRequest, NextResponse } from 'next/server';
-import { getKlingAuthHeader } from '@/lib/klingJwtUtils';
+import { getKlingAuthHeader, debugKlingJWT } from '@/lib/klingJwtUtils';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     const {
       model_name = 'kling-v2-master', // Default to latest model
       prompt,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       if (camera_control.type === 'simple' && camera_control.config) {
         const { horizontal, vertical, pan, tilt, roll, zoom } = camera_control.config;
         const values = [horizontal, vertical, pan, tilt, roll, zoom].filter(v => v !== undefined && v !== null);
-        
+
         // Check that only one value is non-zero
         const nonZeroValues = values.filter(v => v !== 0);
         if (nonZeroValues.length > 1) {
@@ -141,24 +141,24 @@ export async function POST(request: NextRequest) {
     if (negative_prompt && negative_prompt.trim()) {
       payload.negative_prompt = negative_prompt.trim();
     }
-    
+
     if (camera_control) {
       payload.camera_control = camera_control;
     }
-    
+
     if (callback_url && callback_url.trim()) {
       payload.callback_url = callback_url.trim();
     }
-    
+
     if (external_task_id && external_task_id.trim()) {
       payload.external_task_id = external_task_id.trim();
     }
 
-    console.log('🎬 Kling API Request:', {
+    console.log('🎬 Kling API Request Summary:', {
       model_name,
-      prompt: prompt.substring(0, 100) + '...',
+      prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''),
       mode,
-      duration,
+      duration: duration + 's',
       aspect_ratio,
       cfg_scale,
       has_camera_control: !!camera_control,
@@ -166,10 +166,21 @@ export async function POST(request: NextRequest) {
       has_negative_prompt: !!negative_prompt
     });
 
-    console.log('📦 Full payload to Kling:', JSON.stringify(payload, null, 2));
+    // Generate JWT token for this request (usando la implementación corregida)
+    let authHeader;
+    try {
+      authHeader = getKlingAuthHeader();
+      console.log('✅ Successfully generated JWT token for Kling API');
+    } catch (authError) {
+      console.error('❌ Failed to generate JWT token:', authError);
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication Error',
+        details: 'Failed to generate authentication token. Check your KLING_ACCESS_KEY and KLING_SECRET_KEY environment variables.'
+      }, { status: 500 });
+    }
 
-    // Generate JWT token for this request
-    const authHeader = getKlingAuthHeader();
+    console.log('📦 Full payload to Kling API:', JSON.stringify(payload, null, 2));
 
     // Make request to Kling API
     const response = await fetch('https://api-singapore.klingai.com/v1/videos/text2video', {
@@ -183,18 +194,27 @@ export async function POST(request: NextRequest) {
 
     const responseData = await response.json();
 
-    console.log('📥 Kling API Response:', {
-      status: response.status,
-      ok: response.ok,
-      data: responseData
-    });
+    console.log('📥 Kling API Response Status:', response.status);
+    console.log('📥 Kling API Response Data:', responseData);
 
     if (!response.ok) {
-      console.error('❌ Kling API Error:', {
+      console.error('❌ Kling API HTTP Error:', {
         status: response.status,
         statusText: response.statusText,
         responseData
       });
+
+      // Check if it's an authentication error
+      if (response.status === 401 || response.status === 403) {
+        return NextResponse.json({
+          success: false,
+          error: 'Authentication Failed',
+          details: 'Invalid API credentials. Please check your KLING_ACCESS_KEY and KLING_SECRET_KEY.',
+          code: responseData.code,
+          kling_request_id: responseData.request_id
+        }, { status: 401 });
+      }
+
       return NextResponse.json({
         success: false,
         error: 'Kling API Error',
@@ -219,7 +239,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('✅ Kling Task Created:', responseData.data?.task_id);
+    console.log('✅ Kling Task Created Successfully:', responseData.data?.task_id);
 
     return NextResponse.json({
       success: true,
@@ -234,6 +254,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Generate Kling Error:', error);
+
+    // Check if it's a JWT generation error
+    if (error instanceof Error && error.message.includes('KLING_ACCESS_KEY')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Configuration Error',
+        details: 'Missing Kling API credentials. Please set KLING_ACCESS_KEY and KLING_SECRET_KEY environment variables.'
+      }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Internal Server Error',
