@@ -311,6 +311,9 @@ export default function KlingVideoGenerator() {
                     taskId={taskId}
                     duration={videoDuration}
                     aspectRatio={aspectRatio}
+                    mode={mode}
+                    cfgScale={cfgScale}
+                    cameraControl={cameraControl}
                 />
             </div>
         </div>

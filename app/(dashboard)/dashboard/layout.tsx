@@ -1,4 +1,4 @@
-// app/(dashboard)/layout.tsx
+// app/(dashboard)/dashboard/layout.tsx
 'use client';
 
 import Link from 'next/link';
@@ -122,8 +122,30 @@ function Sidebar() {
           >
             <span className="text-xl">🎬</span>
             <div>
-              <div className="font-medium">Kling Video</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">AI video generation</div>
+              <div className="font-medium">Kling Video (T2V)</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Text-to-video generation</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/kling/image-to-video"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🖼️➡️🎬</span>
+            <div>
+              <div className="font-medium">Kling I2V</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Image-to-video generation</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/kling/test"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🧪</span>
+            <div>
+              <div className="font-medium">Kling Test Suite</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">API testing & diagnostics</div>
             </div>
           </Link>
         </nav>
@@ -177,6 +199,28 @@ function Sidebar() {
             </div>
           </Link>
         </nav>
+
+        {/* Quick Info Panel */}
+        <div className="mt-8 p-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg border border-purple-500/30">
+          <h3 className="text-purple-300 font-semibold text-sm mb-2">🆕 New: Kling I2V</h3>
+          <p className="text-xs text-gray-300 mb-3">
+            Transform static images into dynamic videos with advanced motion control, Motion Brush, and camera movements.
+          </p>
+          <div className="space-y-1 text-xs text-gray-400">
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>End frame control</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>Motion Brush (Static/Dynamic)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>Advanced camera controls</span>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   );

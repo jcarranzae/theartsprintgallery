@@ -1,18 +1,15 @@
-// lib/saveVideoToSupabase.ts
+// lib/saveVideoToSupabase.ts - VERSIÓN CORREGIDA
 import { supabase } from './supabase';
+import { getUser } from '@/lib/db/queries'; // Usar el sistema de auth personalizado
 
 interface SaveVideoParams {
-    base64Data: string;
-    folder: string;
-    bucket: string;
-    table: string;
+    videoUrl: string;
     prompt: string;
-    originalName: string;
-    videoId?: string | null;
+    model: string;
+    taskId?: string | null;
     metadata?: {
         duration?: string;
         aspectRatio?: string;
-        model?: string;
         type?: string;
         mode?: string;
         cfg_scale?: number;
@@ -27,53 +24,46 @@ interface SaveVideoResponse {
     error?: string;
 }
 
-export async function saveVideoToSupabase({
-    base64Data,
-    folder,
-    bucket,
-    table,
+export async function saveKlingVideoToSupabase({
+    videoUrl,
     prompt,
-    originalName,
-    videoId,
+    model,
+    taskId,
     metadata = {}
 }: SaveVideoParams): Promise<SaveVideoResponse> {
     try {
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !user) {
+        // 1. Obtener usuario autenticado usando el sistema JWT personalizado
+        const user = await getUser();
+        if (!user) {
             return {
                 success: false,
                 error: 'Usuario no autenticado'
             };
         }
 
-        // Convert base64 to blob
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        console.log('🎬 Saving Kling video for user:', user.id);
+
+        // 2. Descargar el video desde la URL
+        console.log('⬇️ Downloading video from:', videoUrl);
+        const videoResponse = await fetch(videoUrl);
+        if (!videoResponse.ok) {
+            throw new Error(`No se pudo descargar el video: ${videoResponse.statusText}`);
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'video/mp4' });
 
-        // Generate unique filename
-        const timestamp = Date.now();
-        const randomString = Math.random().toString(36).substring(2, 8);
-        const fileName = `${originalName}_${timestamp}_${randomString}.mp4`;
-        const filePath = `${folder}/${fileName}`;
+        const videoBlob = await videoResponse.blob();
+        console.log('✅ Video downloaded:', `${Math.round(videoBlob.size / 1024 / 1024)}MB`);
 
-        console.log('🎬 Uploading video to Supabase:', {
-            bucket,
-            filePath,
-            size: blob.size,
-            user: user.id
-        });
+        // 3. Crear nombre de archivo único
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const randomId = Math.random().toString(36).substring(2, 8);
+        const fileName = `kling_${model}_${timestamp}_${randomId}.mp4`;
+        const filePath = `videos/${fileName}`;
 
-        // Upload video file to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from(bucket)
-            .upload(filePath, blob, {
+        // 4. Subir a Supabase Storage
+        console.log('📤 Uploading to Supabase Storage:', filePath);
+        const { error: uploadError } = await supabase.storage
+            .from('ai-generated-media')
+            .upload(filePath, videoBlob, {
                 contentType: 'video/mp4',
                 upsert: false
             });
@@ -82,47 +72,49 @@ export async function saveVideoToSupabase({
             console.error('❌ Upload error:', uploadError);
             return {
                 success: false,
-                error: `Error uploading video: ${uploadError.message}`
+                error: `Error al subir el video: ${uploadError.message}`
             };
         }
 
-        // Get public URL
+        // 5. Obtener URL pública
         const { data: urlData } = supabase.storage
-            .from(bucket)
+            .from('ai-generated-media')
             .getPublicUrl(filePath);
 
         const publicUrl = urlData.publicUrl;
-
         console.log('✅ Video uploaded successfully:', publicUrl);
 
-        // Save metadata to database
+        // 6. Guardar metadatos en la tabla ai_media_assets (esquema correcto)
         const videoRecord = {
-            id: videoId || `video_${timestamp}_${randomString}`,
-            user_id: user.id,
-            prompt: prompt,
-            file_path: filePath,
-            public_url: publicUrl,
-            original_name: originalName,
-            created_at: new Date().toISOString(),
+            bucket_path: filePath,
+            file_name: fileName,
+            file_type: 'VIDEO',
+            mime_type: 'video/mp4',
+            size_in_bytes: videoBlob.size,
+            user_id: user.id, // Usar el user_id del sistema JWT personalizado
             metadata: {
                 ...metadata,
-                file_size: blob.size,
-                mime_type: 'video/mp4'
+                model,
+                prompt,
+                taskId,
+                source: 'kling',
+                public_url: publicUrl,
+                generated_at: new Date().toISOString()
             }
         };
 
-        const { data: dbData, error: dbError } = await supabase
-            .from(table)
-            .insert([videoRecord])
-            .select();
+        console.log('💾 Saving to ai_media_assets table...');
+        const { error: insertError } = await supabase
+            .from('ai_media_assets')
+            .insert(videoRecord);
 
-        if (dbError) {
-            console.error('❌ Database error:', dbError);
-            // Try to clean up uploaded file
-            await supabase.storage.from(bucket).remove([filePath]);
+        if (insertError) {
+            console.error('❌ Database error:', insertError);
+            // Limpiar archivo subido si falla la BD
+            await supabase.storage.from('ai-generated-media').remove([filePath]);
             return {
                 success: false,
-                error: `Error saving video metadata: ${dbError.message}`
+                error: `Error al guardar en la base de datos: ${insertError.message}`
             };
         }
 
@@ -134,69 +126,35 @@ export async function saveVideoToSupabase({
         };
 
     } catch (error) {
-        console.error('❌ Save video error:', error);
+        console.error('❌ Save Kling video error:', error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Error desconocido'
         };
     }
 }
 
-// Alternative function that extends the existing saveToSupabase for videos
-export async function saveKlingVideoToSupabase({
+// Función alternativa para videos de otros proveedores
+export async function saveVideoToSupabase({
     videoUrl,
     prompt,
     model,
-    taskId,
+    source = 'unknown',
     metadata = {}
 }: {
     videoUrl: string;
     prompt: string;
     model: string;
-    taskId?: string | null;
+    source?: string;
     metadata?: any;
 }): Promise<SaveVideoResponse> {
-    try {
-        // Fetch video as blob
-        const response = await fetch(videoUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch video: ${response.statusText}`);
+    return saveKlingVideoToSupabase({
+        videoUrl,
+        prompt,
+        model,
+        metadata: {
+            ...metadata,
+            source
         }
-
-        const blob = await response.blob();
-
-        // Convert to base64
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const result = reader.result as string;
-                const base64Data = result.split(',')[1];
-
-                const saveResult = await saveVideoToSupabase({
-                    base64Data,
-                    folder: 'videos',
-                    bucket: 'ai-generated-media',
-                    table: 'videos',
-                    prompt,
-                    originalName: `kling_${model}`,
-                    videoId: taskId,
-                    metadata: {
-                        ...metadata,
-                        model,
-                        source: 'kling'
-                    }
-                });
-
-                resolve(saveResult);
-            };
-            reader.readAsDataURL(blob);
-        });
-
-    } catch (error) {
-        console.error('❌ Save Kling video error:', error);
-        return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-        };
-    }
+    });
 }

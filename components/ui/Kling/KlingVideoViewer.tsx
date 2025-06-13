@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from 'react';
 import SaveButton from '../saveButton';
-import { saveKlingVideoToSupabase } from '@/lib/saveVideoToSupabase';
 import { getProxiedVideoUrl, handleVideoLoadError, debugVideoUrl } from '@/lib/videoUrlUtils';
 
 interface KlingVideoViewerProps {
@@ -12,6 +11,9 @@ interface KlingVideoViewerProps {
     taskId?: string | null;
     duration?: string;
     aspectRatio?: string;
+    mode?: string;
+    cfgScale?: number;
+    cameraControl?: any;
 }
 
 const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
@@ -20,7 +22,10 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
     model = 'kling-v2-master',
     taskId = null,
     duration = '',
-    aspectRatio = '16:9'
+    aspectRatio = '16:9',
+    mode = 'std',
+    cfgScale = 0.5,
+    cameraControl = null
 }) => {
     const [saving, setSaving] = useState(false);
     const [savedUrl, setSavedUrl] = useState<string | null>(null);
@@ -66,40 +71,63 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
     }, [currentVideoUrl]);
 
     const handleSave = async () => {
-        if (!videoUrl) return;
+        if (!videoUrl) {
+            alert('No hay video para guardar');
+            return;
+        }
+
         setSaving(true);
 
         try {
-            const { success, url, error } = await saveKlingVideoToSupabase({
-                videoUrl,
-                prompt: prompt || '',
+            console.log('💾 Saving Kling video...', {
+                videoUrl: videoUrl.substring(0, 50) + '...',
                 model,
                 taskId,
-                metadata: {
-                    duration,
-                    aspectRatio,
-                    type: 'video',
-                    source: 'kling'
-                }
+                prompt: prompt.substring(0, 50) + '...',
+                mode,
+                cfgScale,
+                cameraControl
             });
 
-            setSaving(false);
-            if (success && url) {
-                setSavedUrl(url);
+            // Llamar a la nueva API optimizada
+            const response = await fetch('/api/save-kling-video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    videoUrl,
+                    prompt,
+                    model,
+                    taskId,
+                    duration,
+                    aspectRatio,
+                    mode,
+                    cfgScale,
+                    cameraControl
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setSavedUrl(data.data.url);
                 setSavedState(true);
-                console.log('✅ Video saved to Supabase:', url);
+                console.log('✅ Video saved successfully:', data.data);
             } else {
-                console.error('❌ Failed to save video:', error);
-                if (error === 'Usuario no autenticado') {
-                    alert('You must be authenticated to save videos. Please log in.');
+                console.error('❌ Save failed:', data.error);
+
+                if (response.status === 401) {
+                    alert('Debes estar autenticado para guardar videos. Por favor, inicia sesión.');
                 } else {
-                    alert(error || 'Error saving video');
+                    alert(`Error al guardar video: ${data.error}`);
                 }
             }
         } catch (error) {
-            setSaving(false);
             console.error('❌ Save error:', error);
-            alert('Error saving video');
+            alert('Error de red al guardar el video. Inténtalo de nuevo.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -122,7 +150,7 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
 
             const link = document.createElement('a');
             link.href = url;
-            link.download = `kling-${model}-${Date.now()}.mp4`;
+            link.download = `kling-${model}-${taskId || Date.now()}.mp4`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -209,11 +237,12 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
                         >
                             📥 Download
                         </button>
-                        {!savedUrl && (
+                        {!saved && (
                             <SaveButton
                                 onClick={handleSave}
                                 loading={saving}
                                 label="Save Video"
+                                className="bg-purple-600 hover:bg-purple-700"
                             />
                         )}
                     </div>
@@ -231,8 +260,13 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
                         <div className="bg-black/70 backdrop-blur-sm border border-green-500/30 text-green-200 px-3 py-1 rounded-lg text-sm">
                             📐 {aspectRatio}
                         </div>
-                        {retryCount > 0 && (
+                        {mode && (
                             <div className="bg-black/70 backdrop-blur-sm border border-yellow-500/30 text-yellow-200 px-3 py-1 rounded-lg text-sm">
+                                ⚙️ {mode.toUpperCase()}
+                            </div>
+                        )}
+                        {retryCount > 0 && (
+                            <div className="bg-black/70 backdrop-blur-sm border border-orange-500/30 text-orange-200 px-3 py-1 rounded-lg text-sm">
                                 🔄 Retry {retryCount}/2
                             </div>
                         )}
@@ -240,14 +274,23 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
 
                     {/* Success Message */}
                     {saved && (
-                        <div className="absolute bottom-16 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="absolute bottom-16 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
                             <p className="text-sm">✅ Video saved successfully!</p>
-                            <a
-                                href="/dashboard/kling"
-                                className="block text-center hover:text-green-200 text-white font-semibold text-sm mt-1"
-                            >
-                                Create another video
-                            </a>
+                            <div className="flex gap-2 mt-2">
+                                <a
+                                    href="/dashboard/kling"
+                                    className="text-center hover:text-green-200 text-white font-semibold text-xs underline"
+                                >
+                                    Create another video
+                                </a>
+                                <span className="text-xs">|</span>
+                                <a
+                                    href="/dashboard/kling/history"
+                                    className="text-center hover:text-green-200 text-white font-semibold text-xs underline"
+                                >
+                                    View history
+                                </a>
+                            </div>
                         </div>
                     )}
                 </>
