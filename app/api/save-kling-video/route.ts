@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
             aspectRatio,
             mode,
             cfgScale,
-            cameraControl
+            cameraControl,
+            inputImage  // ✅ AGREGADA para Image-to-Video
         } = body;
 
         if (!videoUrl || !prompt) {
@@ -122,11 +123,13 @@ export async function POST(req: NextRequest) {
             mode,
             cfgScale,
             cameraControl,
+            inputImage,  // ✅ AGREGADA para Image-to-Video
             source: 'kling',
             original_url: videoUrl,
             public_url: publicUrl,
             generated_at: new Date().toISOString(),
-            file_size_mb: videoSizeMB
+            file_size_mb: videoSizeMB,
+            generation_type: inputImage ? 'image-to-video' : 'text-to-video'  // ✅ Identificar tipo de generación
         };
 
         // 9. Guardar metadatos en la tabla ai_media_assets

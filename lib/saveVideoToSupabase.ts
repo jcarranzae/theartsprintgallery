@@ -14,6 +14,7 @@ interface SaveVideoParams {
         mode?: string;
         cfg_scale?: number;
         camera_control?: any;
+        inputImage?: string | null;  // ✅ AGREGADA para Image-to-Video
         [key: string]: any;
     };
 }
@@ -99,7 +100,8 @@ export async function saveKlingVideoToSupabase({
                 taskId,
                 source: 'kling',
                 public_url: publicUrl,
-                generated_at: new Date().toISOString()
+                generated_at: new Date().toISOString(),
+                generation_type: metadata.inputImage ? 'image-to-video' : 'text-to-video'  // ✅ Identificar tipo
             }
         };
 
@@ -154,7 +156,8 @@ export async function saveVideoToSupabase({
         model,
         metadata: {
             ...metadata,
-            source
+            source,
+            generation_type: metadata.inputImage ? 'image-to-video' : 'text-to-video'  // ✅ Identificar tipo
         }
     });
 }

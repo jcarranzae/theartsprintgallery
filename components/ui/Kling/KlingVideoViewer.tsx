@@ -14,6 +14,7 @@ interface KlingVideoViewerProps {
     mode?: string;
     cfgScale?: number;
     cameraControl?: any;
+    inputImage?: string | null;  // ✅ AGREGADA para KlingImageToVideoGenerator
 }
 
 const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
@@ -25,7 +26,8 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
     aspectRatio = '16:9',
     mode = 'std',
     cfgScale = 0.5,
-    cameraControl = null
+    cameraControl = null,
+    inputImage = null  // ✅ AGREGADA para KlingImageToVideoGenerator
 }) => {
     const [saving, setSaving] = useState(false);
     const [savedUrl, setSavedUrl] = useState<string | null>(null);
@@ -86,7 +88,8 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
                 prompt: prompt.substring(0, 50) + '...',
                 mode,
                 cfgScale,
-                cameraControl
+                cameraControl,
+                hasInputImage: !!inputImage  // ✅ AGREGADA para debugging
             });
 
             // Llamar a la nueva API optimizada
@@ -104,7 +107,8 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
                     aspectRatio,
                     mode,
                     cfgScale,
-                    cameraControl
+                    cameraControl,
+                    inputImage  // ✅ AGREGADA para guardar referencia de imagen
                 })
             });
 
@@ -263,6 +267,11 @@ const KlingVideoViewer: React.FC<KlingVideoViewerProps> = ({
                         {mode && (
                             <div className="bg-black/70 backdrop-blur-sm border border-yellow-500/30 text-yellow-200 px-3 py-1 rounded-lg text-sm">
                                 ⚙️ {mode.toUpperCase()}
+                            </div>
+                        )}
+                        {inputImage && (
+                            <div className="bg-black/70 backdrop-blur-sm border border-purple-500/30 text-purple-200 px-3 py-1 rounded-lg text-sm">
+                                🖼️ Image-to-Video
                             </div>
                         )}
                         {retryCount > 0 && (
