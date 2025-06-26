@@ -1,6 +1,7 @@
 // lib/agents/video-coordinator.ts
 import { BaseAgent } from './base-agent';
-import { AgentResponse, Platform, KlingModel } from '@/types/agents';
+import { AgentResponse } from '@/types/agents';
+import { KlingModel, Platform } from '@/types/kling-agents';
 
 interface VideoCoordinatorInput {
     contextData: string;

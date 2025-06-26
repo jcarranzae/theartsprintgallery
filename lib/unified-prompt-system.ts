@@ -10,16 +10,19 @@ import { VideoPlatformOptimizer } from './agents/video-platform-optimizer';
 import { Coordinator } from './agents/coordinator';
 import { VideoCoordinator } from './agents/video-coordinator';
 import {
+    AgentResponse,
+    ContextData,
+    Platform as ImagePlatform,
+    FluxModel
+} from '@/types/agents';
+import {
     VideoGenerationRequest,
     VideoPromptGenerationResult,
-    AgentResponse,
     VideoContextData,
-    ContextData,
-    Platform,
-    FluxModel,
     KlingModel,
-    ContentType
-} from '@/types/agents';
+    ContentType,
+    Platform as VideoPlatform
+} from '@/types/kling-agents';
 import { LLM_MODELS } from '@/config/models';
 
 export class UnifiedPromptSystem {
@@ -69,51 +72,79 @@ export class UnifiedPromptSystem {
         }
     }
 
+    // Helper method to convert Platform types
+    private mapPlatformForImage(platform: VideoPlatform): ImagePlatform {
+        // Map video platforms to image platforms
+        switch (platform) {
+            case 'youtube_shorts':
+                return 'youtube_thumbnail';
+            case 'instagram':
+            case 'youtube_thumbnail':
+            case 'tiktok':
+            case 'twitter':
+            case 'linkedin':
+                return platform;
+            default:
+                return 'instagram'; // fallback
+        }
+    }
+
     private async generateImagePrompt(
         request: VideoGenerationRequest,
         agentResponses: AgentResponse[],
         startTime: number
     ): Promise<VideoPromptGenerationResult> {
-        console.log('🔍 Generating IMAGE prompt...');
+        console.log('🖼️ Generating IMAGE prompt...');
 
-        // Step 1: Context analysis
+        // Convert video request to image context
+        const imageContext: ContextData = {
+            content_type: 'image',
+            industry: 'general',
+            objective: 'image_generation',
+            audience: 'general',
+            visual_style: 'high_quality',
+            temporal_context: 'current',
+            trending_topics: ['ai_art', 'digital_creation']
+        };
+
+        // Step 1: Image context analysis
         console.log('🔍 Analyzing image context...');
         const contextResponse = await this.contextAnalyzer.process(request.user_input);
         agentResponses.push(contextResponse);
 
-        const contextData: ContextData = JSON.parse(contextResponse.content);
-
-        // Step 2: Visual base generation
+        // Step 2: Visual generation
         console.log('🎨 Generating visual base...');
-        const visualResponse = await this.visualGenerator.process(contextData);
+        const visualResponse = await this.visualGenerator.process(imageContext);
         agentResponses.push(visualResponse);
 
-        // Step 3: Parallel processing of specialists
+        // Step 3: Parallel processing of image specialists
         console.log('⚡ Processing Flux and Platform specialists in parallel...');
+        const mappedPlatform = this.mapPlatformForImage(request.platform);
+
         const [fluxResponse, platformResponse] = await Promise.all([
             this.fluxSpecialist.process({
-                contextData,
+                contextData: imageContext,
                 basePrompt: visualResponse.content,
-                targetModel: request.target_model as FluxModel || 'flux-pro'
+                targetModel: request.target_model as FluxModel || 'flux-dev'
             }),
             this.platformOptimizer.process({
-                contextData,
+                contextData: imageContext,
                 basePrompt: visualResponse.content,
-                platform: request.platform
+                platform: mappedPlatform
             })
         ]);
 
         agentResponses.push(fluxResponse, platformResponse);
 
         // Step 4: Final coordination
-        console.log('🎯 Coordinating final Flux-optimized prompt...');
+        console.log('🎯 Coordinating final image prompt...');
         const finalResponse = await this.coordinator.process({
-            contextData: contextResponse.content,
+            contextData: JSON.stringify(imageContext),
             visualBase: visualResponse.content,
             techSpecs: fluxResponse.content,
             platformOpts: platformResponse.content,
-            targetModel: request.target_model as FluxModel || 'flux-pro',
-            platform: request.platform
+            targetModel: request.target_model as FluxModel || 'flux-dev',
+            platform: mappedPlatform
         });
 
         agentResponses.push(finalResponse);
@@ -123,14 +154,24 @@ export class UnifiedPromptSystem {
         const avgConfidence = agentResponses.reduce((sum, resp) => sum + resp.confidence, 0) / agentResponses.length;
         const estimatedTokens = Math.ceil(finalResponse.content.length / 4);
 
+        // Create video context data for compatibility
+        const videoContextData: VideoContextData = {
+            ...imageContext,
+            video_style: 'static_image',
+            motion_type: 'none',
+            camera_movement: 'static',
+            duration_preference: 'instant',
+            narrative_structure: 'single-frame'
+        };
+
         return {
             final_prompt: finalResponse.content,
             metadata: {
-                context_data: contextData as VideoContextData,
+                context_data: videoContextData,
                 processing_time: totalProcessingTime,
                 agents_used: agentResponses.map(r => r.agent_name),
                 confidence_score: avgConfidence,
-                target_model: request.target_model as FluxModel || 'flux-pro',
+                target_model: request.target_model as FluxModel || 'flux-dev',
                 content_type: 'image',
                 estimated_tokens: estimatedTokens
             },
@@ -294,7 +335,7 @@ export class UnifiedPromptSystem {
     // Method to optimize existing prompt
     async optimizeExistingPrompt(
         existingPrompt: string,
-        platform: Platform,
+        platform: VideoPlatform,
         contentType: ContentType,
         targetModel: FluxModel | KlingModel
     ): Promise<string> {
@@ -312,7 +353,7 @@ export class UnifiedPromptSystem {
 
     private async optimizeImagePrompt(
         existingPrompt: string,
-        platform: Platform,
+        platform: VideoPlatform,
         targetModel: FluxModel
     ): Promise<string> {
         // Create synthetic context for existing image prompt
@@ -326,6 +367,8 @@ export class UnifiedPromptSystem {
             trending_topics: ['optimization']
         };
 
+        const mappedPlatform = this.mapPlatformForImage(platform);
+
         const [fluxResponse, platformResponse] = await Promise.all([
             this.fluxSpecialist.process({
                 contextData: syntheticContext,
@@ -335,7 +378,7 @@ export class UnifiedPromptSystem {
             this.platformOptimizer.process({
                 contextData: syntheticContext,
                 basePrompt: existingPrompt,
-                platform
+                platform: mappedPlatform
             })
         ]);
 
@@ -345,7 +388,7 @@ export class UnifiedPromptSystem {
             techSpecs: fluxResponse.content,
             platformOpts: platformResponse.content,
             targetModel,
-            platform
+            platform: mappedPlatform
         });
 
         return finalResponse.content;
@@ -353,7 +396,7 @@ export class UnifiedPromptSystem {
 
     private async optimizeVideoPrompt(
         existingPrompt: string,
-        platform: Platform,
+        platform: VideoPlatform,
         targetModel: KlingModel
     ): Promise<string> {
         // Create synthetic context for existing video prompt

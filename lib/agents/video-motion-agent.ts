@@ -1,6 +1,7 @@
 // lib/agents/video-motion-agent.ts
 import { BaseAgent } from './base-agent';
-import { VideoContextData, AgentResponse } from '@/types/agents';
+import { VideoContextData } from '@/types/kling-agents';
+import { AgentResponse } from '@/types/agents';
 
 export class VideoMotionAgent extends BaseAgent {
     async process(contextData: VideoContextData): Promise<AgentResponse> {
