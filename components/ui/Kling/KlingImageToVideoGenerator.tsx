@@ -243,7 +243,7 @@ export default function KlingImageToVideoGenerator() {
 
             // Polling para obtener resultado
             let attempts = 0;
-            const maxAttempts = 100; // Más tiempo para I2V (5 minutos)
+            const maxAttempts = 150; // Más tiempo para I2V (5 minutos)
 
             while (attempts < maxAttempts) {
                 attempts++;
@@ -336,8 +336,8 @@ export default function KlingImageToVideoGenerator() {
                         <button
                             onClick={() => setShowAdvancedFeatures(!showAdvancedFeatures)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${showAdvancedFeatures
-                                    ? 'bg-purple-600 text-white'
-                                    : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
                                 }`}
                         >
                             {showAdvancedFeatures ? '🔧 Hide Advanced Features' : '✨ Show Advanced Features'}

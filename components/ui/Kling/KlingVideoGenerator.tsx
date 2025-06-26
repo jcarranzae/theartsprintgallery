@@ -129,7 +129,7 @@ export default function KlingVideoGenerator() {
 
             // Paso 2: Polling para obtener resultado
             let attempts = 0;
-            const maxAttempts = 80; // Más tiempo para videos (4 minutos)
+            const maxAttempts = 90; // Más tiempo para videos (4 minutos)
 
             while (attempts < maxAttempts) {
                 attempts++;
