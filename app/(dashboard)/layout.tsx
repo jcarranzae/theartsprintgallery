@@ -1,122 +1,146 @@
-// app/layout.tsx
-'use client';
+import React from 'react';
 
-import Link from 'next/link';
-import { useState, Suspense, use } from 'react';
-import { CircleIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUser } from '@/lib/auth';
-import { signOut } from '@/app/(login)/actions';
-import { useRouter } from 'next/navigation';
-
-function UserMenu() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { userPromise } = useUser();
-  const user = use(userPromise);
-  const router = useRouter();
-
-  async function handleSignOut() {
-    await signOut();
-    router.refresh();
-    router.push('/');
-  }
-
-  if (!user) {
+export default function DashboardLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
     return (
-      <>
-        <Link
-          href="/pricing"
-          className="text-green-400 hover:text-green-200"
-        >
-          Pricing
-        </Link>
-        <Button
-          asChild
-          className="bg-black hover:bg-gray-800 text-white text-sm px-4 py-2 rounded-full"
-        >
-          <Link href="/sign-up">Sign Up</Link>
-        </Button>
-      </>
+        <div className="min-h-screen flex flex-col bg-gray-900">
+            {/* Header */}
+            <header className="bg-gray-900 border-b border-green-400/30 fixed w-full top-0 z-50">
+                <nav className="container mx-auto px-4 py-3">
+                    <div className="flex justify-between items-center">
+                        <a href="/" className="text-xl font-extrabold text-green-400">
+                            The Art Prints Gallery
+                        </a>
+
+                        <ul className="hidden md:flex space-x-6">
+                            <li>
+                                <a href="/contenido" className="text-gray-300 hover:text-green-400 transition-colors font-medium">
+                                    Inicio
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/features" className="text-gray-300 hover:text-green-400 transition-colors font-medium">
+                                    Funciones
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/pricing" className="text-gray-300 hover:text-green-400 transition-colors font-medium">
+                                    Precios
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/contact" className="text-gray-300 hover:text-green-400 transition-colors font-medium">
+                                    Contacto
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div className="flex items-center space-x-4">
+                            <a
+                                href="/sign-in"
+                                className="bg-green-400 hover:bg-green-300 text-black px-4 py-2 rounded-md font-bold transition-all duration-300"
+                            >
+                                Iniciar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 pt-20">
+                <div className="container mx-auto px-4 py-8">
+                    {children}
+                </div>
+            </main>
+
+            {/* Footer */}
+            <footer className="bg-gray-800 border-t border-green-400/30 text-white mt-auto">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                        <div>
+                            <h3 className="font-bold text-lg mb-4 text-green-400">Producto</h3>
+                            <div className="space-y-2">
+                                <a href="/features" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Funciones
+                                </a>
+                                <a href="/pricing" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Precios
+                                </a>
+                                <a href="/api" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    API
+                                </a>
+                                <a href="/docs" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Documentación
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold text-lg mb-4 text-green-400">Recursos</h3>
+                            <div className="space-y-2">
+                                <a href="/blog" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Blog
+                                </a>
+                                <a href="/tutorials" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Tutorials
+                                </a>
+                                <a href="/examples" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Ejemplos
+                                </a>
+                                <a href="/community" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Comunidad
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold text-lg mb-4 text-green-400">Empresa</h3>
+                            <div className="space-y-2">
+                                <a href="/about" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Sobre Nosotros
+                                </a>
+                                <a href="/careers" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Careers
+                                </a>
+                                <a href="/press" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Prensa
+                                </a>
+                                <a href="/contact" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Contacto
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold text-lg mb-4 text-green-400">Soporte</h3>
+                            <div className="space-y-2">
+                                <a href="/help" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Centro de Ayuda
+                                </a>
+                                <a href="/status" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Status
+                                </a>
+                                <a href="/privacy" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Privacidad
+                                </a>
+                                <a href="/terms" className="block text-gray-300 hover:text-green-400 transition-colors">
+                                    Términos
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-green-400/30 mt-8 pt-8 text-center">
+                        <p className="text-gray-300">
+                            &copy; 2025 The Art Prints Gallery. Todos los derechos reservados.
+                        </p>
+                    </div>
+                </div>
+            </footer>
+        </div>
     );
-  }
-
-  return (
-    <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-      <DropdownMenuTrigger>
-        <Avatar className="cursor-pointer h-9 w-9">
-          <AvatarImage alt={user.name || ''} />
-          <AvatarFallback>
-            {user.email
-              .split(' ')
-              .map((n) => n[0])
-              .join('')}
-          </AvatarFallback>
-        </Avatar>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="flex flex-col gap-1 bg-gray-800 border border-green-400">
-        <DropdownMenuItem>
-          <Link href="/dashboard" className="flex items-center text-white">
-            Dashboard
-          </Link>
-        </DropdownMenuItem>
-        <form action={handleSignOut} className="w-full">
-          <button type="submit" className="w-full text-left text-white">Sign out</button>
-        </form>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function Header() {
-  return (
-    <header className="bg-gray-900 border-b border-green-400 fixed top-0 w-full z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center">
-          <CircleIcon className="h-6 w-6 text-green-400" />
-          <span className="ml-2 text-2xl font-extrabold text-green-400">The Art Prints Gallery</span>
-        </Link>
-        <nav className="flex space-x-6">
-          <Link href="#features" className="text-green-400 hover:text-green-200">Features</Link>
-          <Link href="#galeria" className="text-green-400 hover:text-green-200">Galería</Link>
-          <Link href="#crear-imagen" className="text-green-400 hover:text-green-200">Crear Imagen</Link>
-          <Link href="#comunidad" className="text-green-400 hover:text-green-200">Comunidad</Link>
-          <Link href="#blog" className="text-green-400 hover:text-green-200">Blog</Link>
-        </nav>
-        <div className="flex items-center space-x-4">
-          <Suspense fallback={<div className="h-9 w-9" />}>
-            <UserMenu />
-          </Suspense>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
-      <Header />
-      <main className="flex-1 pt-16">{children}</main>
-      <footer className="bg-gray-900 text-gray-400 py-8">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
-            <h3 className="text-xl font-bold text-green-400">The Art Prints Gallery</h3>
-            <p>© 2025 The Art Prints Gallery. Todos los derechos reservados.</p>
-          </div>
-          <div className="flex space-x-4">
-            <Link href="#" className="hover:text-white">Twitter</Link>
-            <Link href="#" className="hover:text-white">Instagram</Link>
-            <Link href="#" className="hover:text-white">Discord</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+} 

@@ -4,11 +4,33 @@ import { ContextData, AgentResponse, Platform } from '@/types/agents';
 import { PLATFORM_CONFIGS } from '@/config/platforms';
 
 export class PlatformOptimizer extends BaseAgent {
+  private generateFallbackPlatformOptimization(contextData: ContextData, basePrompt: string, platform: Platform): string {
+    let optimizedPrompt = basePrompt;
+
+    // Add platform-specific optimizations
+    if (platform === 'instagram') {
+      optimizedPrompt += ', vibrant colors, eye-catching composition, Instagram-ready, high engagement potential, square or vertical format';
+    } else if (platform === 'youtube_thumbnail') {
+      optimizedPrompt += ', bold visual elements, clear focal point, thumbnail-optimized, clickable design, 16:9 aspect ratio';
+    } else if (platform === 'tiktok') {
+      optimizedPrompt += ', trendy aesthetic, Gen Z appeal, mobile-optimized, viral potential, vertical 9:16 format';
+    } else if (platform === 'twitter') {
+      optimizedPrompt += ', clean professional look, Twitter-compatible, social media ready, optimized for timeline';
+    } else if (platform === 'linkedin') {
+      optimizedPrompt += ', professional corporate style, business-appropriate, LinkedIn-optimized, professional quality';
+    }
+
+    // Add general social media optimizations
+    optimizedPrompt += ', high quality, engaging composition, social media optimized';
+
+    return optimizedPrompt;
+  }
+
   async process(input: { contextData: ContextData; basePrompt: string; platform: Platform }): Promise<AgentResponse> {
     const { contextData, basePrompt, platform } = input;
     const startTime = Date.now();
     const platformConfig = PLATFORM_CONFIGS[platform];
-    
+
     const prompt = `
 CURRENT PROMPT: "${basePrompt}"
 PLATFORM: ${platform.toUpperCase()}
@@ -34,8 +56,9 @@ Do not add explanations, just the final prompt.
 `;
 
     try {
+      console.log('📱 PlatformOptimizer v2.0 with fallback system active');
       const response = await this.callLLM(prompt, 0.7);
-      
+
       return {
         agent_name: 'PlatformOptimizer',
         content: response.trim(),
@@ -43,8 +66,18 @@ Do not add explanations, just the final prompt.
         processing_time: Date.now() - startTime
       };
     } catch (error) {
-      console.error('Platform optimization failed:', error);
-      throw new Error('Failed to optimize for platform');
+      console.error('❌ Platform optimization failed:', error);
+      console.log('🔄 Using fallback platform optimization...');
+
+      // Generate fallback platform optimization
+      const fallbackPrompt = this.generateFallbackPlatformOptimization(contextData, basePrompt, platform);
+
+      return {
+        agent_name: 'PlatformOptimizer',
+        content: fallbackPrompt,
+        confidence: 0.6, // Lower confidence for fallback
+        processing_time: Date.now() - startTime
+      };
     }
   }
 }

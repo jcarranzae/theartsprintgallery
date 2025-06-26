@@ -5,12 +5,46 @@ import { FLUX_MODELS } from '@/config/flux-models';
 import { FLUX_PROMPT_PATTERNS } from '@/config/models';
 
 export class FluxSpecialist extends BaseAgent {
+  private generateFallbackFluxPrompt(contextData: ContextData, basePrompt: string, targetModel: FluxModel): string {
+    const fluxConfig = FLUX_MODELS[targetModel];
+    const promptPattern = FLUX_PROMPT_PATTERNS[targetModel];
+
+    // Basic optimization based on Flux model capabilities
+    let optimizedPrompt = basePrompt;
+
+    // Apply model-specific optimizations
+    if (targetModel === 'flux-pro') {
+      optimizedPrompt = `${basePrompt}, professional photography, high resolution, detailed lighting, cinematic quality, ultra-realistic`;
+    } else if (targetModel === 'flux-dev') {
+      optimizedPrompt = `${basePrompt}, high quality, professional style, detailed, good lighting`;
+    } else if (targetModel === 'flux-schnell') {
+      optimizedPrompt = `${basePrompt}, clean style, good quality`;
+    }
+
+    // Add visual style considerations
+    if (contextData.visual_style.includes('professional')) {
+      optimizedPrompt += ', corporate professional style';
+    }
+    if (contextData.visual_style.includes('modern')) {
+      optimizedPrompt += ', contemporary modern aesthetic';
+    }
+
+    // Add industry-specific elements
+    if (contextData.industry === 'technology') {
+      optimizedPrompt += ', sleek tech aesthetic';
+    } else if (contextData.industry === 'food') {
+      optimizedPrompt += ', appetizing food photography';
+    }
+
+    return optimizedPrompt;
+  }
+
   async process(input: { contextData: ContextData; basePrompt: string; targetModel?: FluxModel }): Promise<AgentResponse> {
     const { contextData, basePrompt, targetModel = 'flux-pro' } = input;
     const startTime = Date.now();
     const fluxConfig = FLUX_MODELS[targetModel];
     const promptPattern = FLUX_PROMPT_PATTERNS[targetModel];
-    
+
     const prompt = `
 YOU ARE A FLUX MODELS SPECIALIST FROM BLACK FOREST LABS.
 
@@ -52,8 +86,9 @@ Respond only with the optimized prompt for ${targetModel} in English, without ad
 `;
 
     try {
+      console.log('⚡ FluxSpecialist v2.0 with fallback system active');
       const response = await this.callLLM(prompt, 0.6);
-      
+
       return {
         agent_name: 'FluxSpecialist',
         content: response.trim(),
@@ -61,8 +96,18 @@ Respond only with the optimized prompt for ${targetModel} in English, without ad
         processing_time: Date.now() - startTime
       };
     } catch (error) {
-      console.error('Flux optimization failed:', error);
-      throw new Error('Failed to optimize for Flux model');
+      console.error('❌ Flux optimization failed:', error);
+      console.log('🔄 Using fallback Flux optimization...');
+
+      // Generate fallback Flux optimization
+      const fallbackPrompt = this.generateFallbackFluxPrompt(contextData, basePrompt, targetModel);
+
+      return {
+        agent_name: 'FluxSpecialist',
+        content: fallbackPrompt,
+        confidence: 0.6, // Lower confidence for fallback
+        processing_time: Date.now() - startTime
+      };
     }
   }
 }

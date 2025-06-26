@@ -1,4 +1,4 @@
-// app/(dashboard)/dashboard/layout.tsx
+// app/(dashboard)/dashboard/layout.tsx - ACTUALIZADO
 'use client';
 
 import Link from 'next/link';
@@ -105,6 +105,23 @@ function Sidebar() {
       <div className="p-4">
         <h2 className="text-lg font-semibold text-green-400 mb-4">🎨 AI Generators</h2>
         <nav className="space-y-2">
+          {/* ✨ NUEVO: Sistema de Agentes Unificado */}
+          <Link
+            href="/dashboard/promptGenerator"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-purple-700/20 hover:text-white transition-colors group border border-purple-500/30 bg-gradient-to-r from-purple-900/10 to-blue-900/10"
+          >
+            <span className="text-xl">🚀</span>
+            <div>
+              <div className="font-medium text-purple-300">AI Prompt Studio</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                Multi-agent prompt optimization
+              </div>
+              <div className="text-xs text-purple-400 mt-1">
+                ✨ Flux + Kling + Platforms
+              </div>
+            </div>
+          </Link>
+
           <Link
             href="/dashboard/kontext"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
@@ -184,6 +201,18 @@ function Sidebar() {
               <div className="text-xs text-gray-400 group-hover:text-gray-300">All generations</div>
             </div>
           </Link>
+
+          {/* ✨ NUEVO: Historial de Prompts */}
+          <Link
+            href="/dashboard/prompt-history"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🧠</span>
+            <div>
+              <div className="font-medium">Prompt History</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">AI-generated prompts</div>
+            </div>
+          </Link>
         </nav>
 
         <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">⚙️ Settings</h2>
@@ -200,11 +229,43 @@ function Sidebar() {
           </Link>
         </nav>
 
-        {/* Quick Info Panel */}
+        {/* ✨ ACTUALIZADO: Quick Info Panel */}
         <div className="mt-8 p-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg border border-purple-500/30">
-          <h3 className="text-purple-300 font-semibold text-sm mb-2">🆕 New: Kling I2V</h3>
+          <h3 className="text-purple-300 font-semibold text-sm mb-2">🚀 New: AI Prompt Studio</h3>
           <p className="text-xs text-gray-300 mb-3">
-            Transform static images into dynamic videos with advanced motion control, Motion Brush, and camera movements.
+            Revolutionary multi-agent system that creates optimized prompts for both Flux images and Kling videos.
+          </p>
+          <div className="space-y-1 text-xs text-gray-400">
+            <div className="flex items-center gap-2">
+              <span className="text-purple-400">✓</span>
+              <span>6 specialized AI agents</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-purple-400">✓</span>
+              <span>Platform optimization</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-purple-400">✓</span>
+              <span>Flux + Kling support</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-purple-400">✓</span>
+              <span>Instant variations</span>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/promptGenerator"
+            className="inline-block mt-3 text-xs bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded-md transition-colors"
+          >
+            Try Now →
+          </Link>
+        </div>
+
+        {/* Info Panel Original (Kling I2V) */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-blue-900/20 to-green-900/20 rounded-lg border border-blue-500/30">
+          <h3 className="text-blue-300 font-semibold text-sm mb-2">🎬 Kling I2V</h3>
+          <p className="text-xs text-gray-300 mb-3">
+            Transform static images into dynamic videos with advanced motion control.
           </p>
           <div className="space-y-1 text-xs text-gray-400">
             <div className="flex items-center gap-2">
