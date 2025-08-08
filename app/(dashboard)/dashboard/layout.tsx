@@ -179,40 +179,6 @@ function Sidebar() {
               <div className="text-xs text-gray-400 group-hover:text-gray-300">Browse your creations</div>
             </div>
           </Link>
-
-          <Link
-            href="/dashboard/kling/history"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
-          >
-            <span className="text-xl">🎥</span>
-            <div>
-              <div className="font-medium">Video History</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">Your Kling generations</div>
-            </div>
-          </Link>
-
-          <Link
-            href="/dashboard/history"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
-          >
-            <span className="text-xl">📜</span>
-            <div>
-              <div className="font-medium">Generation History</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">All generations</div>
-            </div>
-          </Link>
-
-          {/* ✨ NUEVO: Historial de Prompts */}
-          <Link
-            href="/dashboard/prompt-history"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
-          >
-            <span className="text-xl">🧠</span>
-            <div>
-              <div className="font-medium">Prompt History</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">AI-generated prompts</div>
-            </div>
-          </Link>
         </nav>
 
         <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">⚙️ Settings</h2>
