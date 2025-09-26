@@ -34,7 +34,7 @@ export default function GalleryPage() {
   const fetchAssets = async () => {
     try {
       const { data, error } = await supabase
-        .from('images')
+        .from('ai_media_assets')
         .select('*')
         .order('created_at', { ascending: false });
 
