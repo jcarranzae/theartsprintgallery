@@ -116,9 +116,6 @@ function Sidebar() {
               <div className="text-xs text-gray-400 group-hover:text-gray-300">
                 Multi-agent prompt optimization
               </div>
-              <div className="text-xs text-purple-400 mt-1">
-                ✨ Flux + Kling + Platforms
-              </div>
             </div>
           </Link>
 
@@ -130,6 +127,28 @@ function Sidebar() {
             <div>
               <div className="font-medium">Flux Kontext</div>
               <div className="text-xs text-gray-400 group-hover:text-gray-300">Advanced contextual images</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/fluxEditor"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">✏️</span>
+            <div>
+              <div className="font-medium">Flux Editor</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Edit images with AI</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/createImage"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🖼️</span>
+            <div>
+              <div className="font-medium">Create Image</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Generate images</div>
             </div>
           </Link>
 
@@ -156,19 +175,110 @@ function Sidebar() {
           </Link>
 
           <Link
-            href="/dashboard/kling/test"
+            href="/dashboard/createVideo"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
           >
-            <span className="text-xl">🧪</span>
+            <span className="text-xl">🎥</span>
             <div>
-              <div className="font-medium">Kling Test Suite</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">API testing & diagnostics</div>
+              <div className="font-medium">Create Video</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Generate videos</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/createMusic"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🎵</span>
+            <div>
+              <div className="font-medium">Create Music</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Generate music</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/music"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🎶</span>
+            <div>
+              <div className="font-medium">Music Studio</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Advanced music generation</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/create"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">✨</span>
+            <div>
+              <div className="font-medium">Create</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Universal creator</div>
+            </div>
+          </Link>
+        </nav>
+
+        <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">🛠️ Tools</h2>
+        <nav className="space-y-2">
+          <Link
+            href="/dashboard/imageScaler"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🔍</span>
+            <div>
+              <div className="font-medium">Image Scaler</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Upscale images</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/tools/canny"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🎭</span>
+            <div>
+              <div className="font-medium">Canny Edge</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Edge detection</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/tools/fill"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🎨</span>
+            <div>
+              <div className="font-medium">Fill Tool</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">AI inpainting</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/tools/finetune"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">⚡</span>
+            <div>
+              <div className="font-medium">Fine-tune</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Model fine-tuning</div>
             </div>
           </Link>
         </nav>
 
         <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">📊 Management</h2>
         <nav className="space-y-2">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🏠</span>
+            <div>
+              <div className="font-medium">Dashboard</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Overview</div>
+            </div>
+          </Link>
+
           <Link
             href="/dashboard/gallery"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
@@ -179,18 +289,79 @@ function Sidebar() {
               <div className="text-xs text-gray-400 group-hover:text-gray-300">Browse your creations</div>
             </div>
           </Link>
+
+          <Link
+            href="/dashboard/kling/history"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">📜</span>
+            <div>
+              <div className="font-medium">Kling History</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Video generation history</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/activity"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">📊</span>
+            <div>
+              <div className="font-medium">Activity</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">View activity logs</div>
+            </div>
+          </Link>
+        </nav>
+
+        <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">📝 Content</h2>
+        <nav className="space-y-2">
+          <Link
+            href="/dashboard/blogForm"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">📝</span>
+            <div>
+              <div className="font-medium">Blog Editor</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Create blog posts</div>
+            </div>
+          </Link>
         </nav>
 
         <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">⚙️ Settings</h2>
         <nav className="space-y-2">
           <Link
-            href="/dashboard/settings"
+            href="/dashboard/general"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
           >
             <span className="text-xl">⚙️</span>
             <div>
-              <div className="font-medium">Settings</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">Account & preferences</div>
+              <div className="font-medium">General</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">General settings</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/security"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🔒</span>
+            <div>
+              <div className="font-medium">Security</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">Security & privacy</div>
+            </div>
+          </Link>
+        </nav>
+
+        <h2 className="text-lg font-semibold text-green-400 mb-4 mt-8">🧪 Testing</h2>
+        <nav className="space-y-2">
+          <Link
+            href="/dashboard/kling/test"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
+          >
+            <span className="text-xl">🧪</span>
+            <div>
+              <div className="font-medium">Kling Test Suite</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">API testing & diagnostics</div>
             </div>
           </Link>
         </nav>

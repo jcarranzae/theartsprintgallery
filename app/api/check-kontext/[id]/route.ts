@@ -13,9 +13,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
+    // Obtener polling_url de los query params si existe
+    const { searchParams } = new URL(request.url);
+    const pollingUrl = searchParams.get('polling_url');
+
     console.log(`🔍 Checking status for task: ${id}`);
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'Task ID is required' },
@@ -26,7 +30,7 @@ export async function GET(
     // Obtener configuración del environment
     const baseUrl = process.env.BFL_BASE_URL;
     const apiKey = process.env.BFL_API_KEY;
-    
+
     if (!baseUrl || !apiKey) {
       return NextResponse.json(
         { error: 'BFL API configuration not found' },
@@ -34,8 +38,8 @@ export async function GET(
       );
     }
 
-    // Consultar estado del task en BFL API usando query parameter
-    const bflUrl = `${baseUrl}/get_result?id=${id}`;
+    // Usar polling_url si existe, sino construir URL manualmente
+    const bflUrl = pollingUrl || `${baseUrl}/get_result?id=${id}`;
     console.log(`🎯 Polling BFL at: ${bflUrl}`);
     
     const response = await fetch(bflUrl, {

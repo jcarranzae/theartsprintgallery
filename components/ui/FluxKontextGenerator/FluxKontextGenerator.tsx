@@ -135,46 +135,74 @@ export default function FluxKontextGenerator() {
       }
 
       const id = data.data.id;
+      const pollingUrl = data.data.polling_url; // ← IMPORTANTE: Usar polling_url de la respuesta
       setTaskId(id);
       setGenerationStatus('Generation started...');
+
+      console.log('🎯 Task ID:', id);
+      console.log('📡 Polling URL:', pollingUrl);
 
       // Paso 2: Polling para obtener resultado
       for (let i = 0; i < 60; i++) {
         await new Promise((res) => setTimeout(res, 3000)); // 3 segundos entre checks
 
-        const pollResponse = await fetch(`/api/check-kontext/${id}`);
+        const pollResponse = await fetch(`/api/check-kontext/${id}?polling_url=${encodeURIComponent(pollingUrl || '')}`);
+
+        if (!pollResponse.ok) {
+          console.error(`❌ Polling error: ${pollResponse.status} ${pollResponse.statusText}`);
+          setGenerationStatus(`Polling error: ${pollResponse.status}`);
+          alert(`Error checking generation status: ${pollResponse.statusText}`);
+          break;
+        }
+
         const pollData = await pollResponse.json();
+        console.log(`[Poll ${i+1}/60] Status: ${pollData.status}, Completed: ${pollData.completed}`);
 
         if (pollData.success) {
           // Actualizar estado y progreso
           setGenerationStatus(pollData.status);
           setGenerationProgress(pollData.progress * 100);
 
+          console.log('📊 Poll data:', {
+            completed: pollData.completed,
+            status: pollData.status,
+            hasImageData: !!pollData.imageData
+          });
+
           // Manejar estados específicos de BFL
           if (pollData.completed && pollData.status === 'Ready') {
+            console.log('🎉 Generation completed!');
+
             if (pollData.imageData) {
+              console.log('🖼️ Image data received:', pollData.imageData.substring(0, 100) + '...');
               setGenerationStatus('Processing image...');
 
               // Probar acceso directo primero
+              console.log('🔍 Testing direct image access...');
               const directTest = await testImageAccess(pollData.imageData);
 
               if (directTest.success) {
                 console.log('✅ Direct image access works');
                 setResult(pollData.imageData);
                 setGenerationStatus('Completed!');
+                console.log('✅ Image set to result state');
               } else {
                 console.log('❌ Direct access failed, using proxy');
+                console.log('❌ Error:', directTest.error);
                 setUsingProxy(true);
                 setGenerationStatus('Using proxy for image...');
 
                 // Usar proxy
                 const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(pollData.imageData)}`;
+                console.log('🔄 Using proxy URL:', proxyUrl);
                 setResult(proxyUrl);
                 setGenerationStatus('Completed via proxy!');
+                console.log('✅ Proxy URL set to result state');
               }
 
               setGenerationProgress(100);
             } else {
+              console.error('❌ No image data in completed response');
               throw new Error('No image data in completed response');
             }
             break;

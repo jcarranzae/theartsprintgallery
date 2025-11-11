@@ -13,10 +13,16 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Verificar que la URL es de BFL para seguridad
-        if (!imageUrl.includes('delivery-us1.bfl.ai') && !imageUrl.includes('bfl.ai')) {
+        // Verificar que la URL es de BFL o Azure Blob Storage (usado por BFL) para seguridad
+        const isValidBFLUrl =
+            imageUrl.includes('bfl.ai') ||
+            imageUrl.includes('blob.core.windows.net') ||
+            imageUrl.includes('bfldelivery');
+
+        if (!isValidBFLUrl) {
+            console.error('❌ Invalid image URL:', imageUrl);
             return NextResponse.json(
-                { error: 'Invalid image URL' },
+                { error: 'Invalid image URL - must be from BFL services' },
                 { status: 400 }
             );
         }
