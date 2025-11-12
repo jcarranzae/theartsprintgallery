@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 interface KontextProRequest {
   prompt: string;
   input_image?: string | null;
+  input_image_2?: string | null; // Experimental Multiref
+  input_image_3?: string | null; // Experimental Multiref
+  input_image_4?: string | null; // Experimental Multiref
   seed?: number;
   aspect_ratio?: string;
   output_format?: 'jpg' | 'png';
@@ -40,6 +43,9 @@ export async function POST(request: NextRequest) {
     const payload = {
       prompt: body.prompt,
       input_image: body.input_image || null,
+      input_image_2: body.input_image_2 || null,
+      input_image_3: body.input_image_3 || null,
+      input_image_4: body.input_image_4 || null,
       seed: body.seed || 42,
       aspect_ratio: body.aspect_ratio || '16:9',
       output_format: body.output_format || 'png',
@@ -49,7 +55,9 @@ export async function POST(request: NextRequest) {
       safety_tolerance: body.safety_tolerance || 2
     };
 
-    console.log('🚀 Sending request to Flux Kontext Pro:', payload);
+    const imageCount = [payload.input_image, payload.input_image_2, payload.input_image_3, payload.input_image_4]
+      .filter(img => img !== null).length;
+    console.log(`🚀 Sending request to Flux Kontext Pro with ${imageCount} context image(s)`);
 
     // Realizar request a BFL API
     const response = await fetch(`${baseUrl}/flux-kontext-pro`, {

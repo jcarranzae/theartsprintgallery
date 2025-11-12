@@ -25,8 +25,11 @@ const aspectRatios = [
 
 export default function FluxKontextGenerator() {
   const [selectedModel, setSelectedModel] = useState(models[0].value);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
+  // Soporte para hasta 4 imágenes de entrada
+  const [imageFiles, setImageFiles] = useState<(File | null)[]>([null, null, null, null]);
+  const [selectedImageUrls, setSelectedImageUrls] = useState<(string | null)[]>([null, null, null, null]);
+
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,24 +80,27 @@ export default function FluxKontextGenerator() {
     setUsingProxy(false);
     setShowAdvanced(false);
 
-    // Convertir imagen a base64 si existe
-    let base64Image = null;
-    if (imageFile) {
-      setGenerationStatus('Processing context image...');
-      base64Image = await toBase64(imageFile);
-    } else if (selectedImageUrl) {
-      setGenerationStatus('Processing selected image...');
-      // Si se seleccionó una imagen de la galería, convertirla a base64
-      try {
-        const response = await fetch(selectedImageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'selected-image.jpg', { type: blob.type });
-        base64Image = await toBase64(file);
-      } catch (error) {
-        console.error('Error converting selected image:', error);
-        alert('Error processing selected image. Please try uploading a new image.');
-        setLoading(false);
-        return;
+    // Convertir todas las imágenes a base64
+    const base64Images: (string | null)[] = [null, null, null, null];
+    const hasAnyImage = imageFiles.some(f => f !== null) || selectedImageUrls.some(url => url !== null);
+
+    if (hasAnyImage) {
+      setGenerationStatus('Processing context images...');
+
+      for (let i = 0; i < 4; i++) {
+        if (imageFiles[i]) {
+          base64Images[i] = await toBase64(imageFiles[i]!);
+        } else if (selectedImageUrls[i]) {
+          try {
+            const response = await fetch(selectedImageUrls[i]!);
+            const blob = await response.blob();
+            const file = new File([blob], `selected-image-${i + 1}.jpg`, { type: blob.type });
+            base64Images[i] = await toBase64(file);
+          } catch (error) {
+            console.error(`Error converting selected image ${i + 1}:`, error);
+            alert(`Error processing selected image ${i + 1}. Continuing with other images.`);
+          }
+        }
       }
     }
 
@@ -108,7 +114,10 @@ export default function FluxKontextGenerator() {
 
       const payload = {
         prompt,
-        input_image: base64Image, // ← CLAVE: Incluir imagen de contexto
+        input_image: base64Images[0], // Primera imagen (principal)
+        input_image_2: base64Images[1], // Segunda imagen (experimental multiref)
+        input_image_3: base64Images[2], // Tercera imagen (experimental multiref)
+        input_image_4: base64Images[3], // Cuarta imagen (experimental multiref)
         seed,
         aspect_ratio: aspectRatio,
         output_format: outputFormat,
@@ -118,7 +127,8 @@ export default function FluxKontextGenerator() {
         webhook_secret: null
       };
 
-      console.log('🖼️ Payload includes context image:', !!base64Image);
+      const imageCount = base64Images.filter(img => img !== null).length;
+      console.log(`🖼️ Payload includes ${imageCount} context image(s)`);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -274,10 +284,10 @@ export default function FluxKontextGenerator() {
 
         <div className="text-[#8C1AD9] font-semibold text-lg">
           <KontextImageUploader
-            imageFile={imageFile}
-            setImageFile={setImageFile}
-            selectedImageUrl={selectedImageUrl}
-            setSelectedImageUrl={setSelectedImageUrl}
+            imageFiles={imageFiles}
+            setImageFiles={setImageFiles}
+            selectedImageUrls={selectedImageUrls}
+            setSelectedImageUrls={setSelectedImageUrls}
           />
         </div>
 
@@ -326,9 +336,14 @@ export default function FluxKontextGenerator() {
             <div className="mb-4">
               <p className="text-[#8C1AD9] font-semibold text-lg">Task ID: {taskId}</p>
               <p className="text-gray-300 text-sm mt-1">Status: {generationStatus}</p>
-              {(imageFile || selectedImageUrl) && (
-                <p className="text-cyan-400 text-sm mt-1">🖼️ Using context image</p>
-              )}
+              {(() => {
+                const totalImages = imageFiles.filter(f => f !== null).length + selectedImageUrls.filter(url => url !== null).length;
+                return totalImages > 0 && (
+                  <p className="text-cyan-400 text-sm mt-1">
+                    🖼️ Using {totalImages} context image{totalImages > 1 ? 's' : ''} {totalImages > 1 && '(Experimental Multiref)'}
+                  </p>
+                );
+              })()}
             </div>
 
             {/* Progress Bar */}

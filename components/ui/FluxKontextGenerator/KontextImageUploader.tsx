@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Loader2, X, Image as ImageIcon, Upload, Grid3X3 } from 'lucide-react';
 
 interface KontextImageUploaderProps {
-  imageFile: File | null;
-  setImageFile: (file: File | null) => void;
-  selectedImageUrl?: string | null;
-  setSelectedImageUrl?: (url: string | null) => void;
+  imageFiles: (File | null)[];
+  setImageFiles: (files: (File | null)[]) => void;
+  selectedImageUrls?: (string | null)[];
+  setSelectedImageUrls?: (urls: (string | null)[]) => void;
 }
 
 interface SupabaseImage {
@@ -21,27 +21,37 @@ interface SupabaseImage {
 }
 
 const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
-  imageFile,
-  setImageFile,
-  selectedImageUrl,
-  setSelectedImageUrl
+  imageFiles,
+  setImageFiles,
+  selectedImageUrls = [null, null, null, null],
+  setSelectedImageUrls
 }) => {
   const [supabaseImages, setSupabaseImages] = useState<SupabaseImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [currentSlot, setCurrentSlot] = useState<number>(0); // Slot actual para subir/seleccionar
+  const [previewUrls, setPreviewUrls] = useState<(string | null)[]>([null, null, null, null]);
 
   useEffect(() => {
-    if (selectedImageUrl) {
-      setPreviewUrl(selectedImageUrl);
-    } else if (imageFile) {
-      const url = URL.createObjectURL(imageFile);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setPreviewUrl(null);
+    const newPreviews: (string | null)[] = [null, null, null, null];
+    const urlsToRevoke: string[] = [];
+
+    for (let i = 0; i < 4; i++) {
+      if (selectedImageUrls[i]) {
+        newPreviews[i] = selectedImageUrls[i];
+      } else if (imageFiles[i]) {
+        const url = URL.createObjectURL(imageFiles[i]!);
+        newPreviews[i] = url;
+        urlsToRevoke.push(url);
+      }
     }
-  }, [selectedImageUrl, imageFile]);
+
+    setPreviewUrls(newPreviews);
+
+    return () => {
+      urlsToRevoke.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [selectedImageUrls, imageFiles]);
 
   useEffect(() => {
     if (isGalleryOpen) {
@@ -91,32 +101,68 @@ const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setImageFile(file);
-    if (setSelectedImageUrl) {
-      setSelectedImageUrl(null);
+    const newFiles = [...imageFiles];
+    newFiles[currentSlot] = file;
+    setImageFiles(newFiles);
+
+    if (setSelectedImageUrls) {
+      const newUrls = [...selectedImageUrls];
+      newUrls[currentSlot] = null;
+      setSelectedImageUrls(newUrls);
     }
   };
 
   const handleSupabaseImageSelect = (imageUrl: string) => {
-    if (setSelectedImageUrl) {
-      setSelectedImageUrl(imageUrl);
-      setImageFile(null);
+    if (setSelectedImageUrls) {
+      const newUrls = [...selectedImageUrls];
+      newUrls[currentSlot] = imageUrl;
+      setSelectedImageUrls(newUrls);
+
+      const newFiles = [...imageFiles];
+      newFiles[currentSlot] = null;
+      setImageFiles(newFiles);
     }
     setIsGalleryOpen(false);
   };
 
-  const clearSelection = () => {
-    setImageFile(null);
-    if (setSelectedImageUrl) {
-      setSelectedImageUrl(null);
+  const clearSelection = (slotIndex: number) => {
+    const newFiles = [...imageFiles];
+    newFiles[slotIndex] = null;
+    setImageFiles(newFiles);
+
+    if (setSelectedImageUrls) {
+      const newUrls = [...selectedImageUrls];
+      newUrls[slotIndex] = null;
+      setSelectedImageUrls(newUrls);
     }
   };
 
   return (
     <div className="space-y-3">
-      <label className="text-[#8C1AD9] font-semibold text-lg">📸 Context Image (Optional)</label>
+      <label className="text-[#8C1AD9] font-semibold text-lg">
+        📸 Context Images (Up to 4)
+        <span className="text-xs text-cyan-400 ml-2">✨ Experimental Multiref</span>
+      </label>
 
-      <div className="flex items-center gap-3 w-full">
+      {/* Slot Selector */}
+      <div className="flex gap-2 mb-3">
+        {[0, 1, 2, 3].map((slot) => (
+          <button
+            key={slot}
+            onClick={() => setCurrentSlot(slot)}
+            className={`px-3 py-1 rounded-lg font-semibold text-sm transition-all ${
+              currentSlot === slot
+                ? 'bg-[#8C1AD9] text-white shadow-lg'
+                : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'
+            }`}
+          >
+            Slot {slot + 1}
+            {(previewUrls[slot]) && ' ✓'}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-start gap-3 w-full">
         <div className="flex-1 space-y-2">
           {/* Upload Button */}
           <label
@@ -126,7 +172,7 @@ const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
             }}
           >
             <Upload size={16} />
-            {imageFile || selectedImageUrl ? 'Change Image' : 'Upload Image'}
+            {previewUrls[currentSlot] ? 'Change Image' : `Upload to Slot ${currentSlot + 1}`}
             <input
               type="file"
               accept="image/*"
@@ -146,31 +192,39 @@ const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
           </Button>
         </div>
 
-        {/* Image Preview */}
-        {previewUrl && (
-          <div className="relative w-20 h-20 flex-shrink-0">
-            <img
-              src={previewUrl}
-              alt="Context Preview"
-              className="w-full h-full object-cover rounded-lg border-2 border-[#8C1AD9]/50 shadow-lg"
-            />
-            <button
-              onClick={clearSelection}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
+        {/* Image Previews Grid */}
+        <div className="grid grid-cols-2 gap-2">
+          {previewUrls.map((url, index) => (
+            url && (
+              <div key={index} className="relative w-16 h-16 flex-shrink-0">
+                <div className="absolute -top-1 -left-1 bg-[#8C1AD9] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold z-10">
+                  {index + 1}
+                </div>
+                <img
+                  src={url}
+                  alt={`Context ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg border-2 border-[#8C1AD9]/50 shadow-lg"
+                />
+                <button
+                  onClick={() => clearSelection(index)}
+                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors shadow-lg z-10"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            )
+          ))}
+        </div>
       </div>
 
       <div className="text-gray-400 text-sm space-y-1">
         <p className="flex items-center gap-2">
           <span className="text-[#8C1AD9]">💡</span>
-          <span><strong>Context Image:</strong> Upload a reference image to provide visual context for generation</span>
+          <span><strong>Multi-Image Context:</strong> Upload up to 4 reference images for advanced composition control</span>
         </p>
         <p className="text-xs text-gray-500 ml-6">
-          The Kontext models will understand the scene, lighting, style, and composition of your reference image and incorporate these elements into the generated result.
+          {currentSlot === 0 && 'Slot 1: Primary reference image for overall style and composition'}
+          {currentSlot > 0 && `Slot ${currentSlot + 1}: Additional reference for enhanced multiref understanding (Experimental)`}
         </p>
       </div>
 
@@ -178,8 +232,10 @@ const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
       <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-zinc-900 border border-[#8C1AD9]/30">
           <DialogHeader>
-            <DialogTitle className="text-[#8C1AD9] text-xl">🖼️ Image Gallery</DialogTitle>
-            <p className="text-gray-400 text-sm">Select an image from your previously generated images</p>
+            <DialogTitle className="text-[#8C1AD9] text-xl">
+              🖼️ Image Gallery - Slot {currentSlot + 1}
+            </DialogTitle>
+            <p className="text-gray-400 text-sm">Select an image for context slot {currentSlot + 1}</p>
           </DialogHeader>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
