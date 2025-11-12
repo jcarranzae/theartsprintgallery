@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Upload, Grid3X3 } from 'lucide-react';
 
 interface ImageUploaderProps {
   imageFile: File | null;
@@ -113,17 +113,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center mt-6 w-full">
-      <div className="flex items-center gap-4 w-full">
-        <div className="flex-1">
+    <div className="space-y-3">
+      <label className="text-[#8C1AD9] font-semibold text-lg">📸 Input Image (Optional)</label>
+
+      <div className="flex items-center gap-3 w-full">
+        <div className="flex-1 space-y-2">
+          {/* Upload Button */}
           <label
-            className="cursor-pointer bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white px-4 py-2 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] transition-all duration-300 hover:scale-105 shadow-lg inline-block"
+            className="cursor-pointer bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white px-4 py-2 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] transition-all duration-300 hover:scale-105 shadow-lg inline-flex items-center gap-2"
             style={{
-              boxShadow: "0 0 16px 3px #8C1AD9",
-              borderRadius: "12px",
+              boxShadow: "0 0 12px 2px rgba(140, 26, 217, 0.3)",
             }}
           >
-            {imageFile ? 'Cambiar Imagen' : 'Subir Imagen'}
+            <Upload size={16} />
+            {imageFile || selectedImageUrl ? 'Change Image' : 'Upload Image'}
             <input
               type="file"
               accept="image/*"
@@ -131,25 +134,29 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               className="hidden"
             />
           </label>
+
+          {/* Gallery Button */}
           <Button
             variant="outline"
             onClick={() => setIsGalleryOpen(true)}
-            className="ml-2"
+            className="ml-2 border-[#8C1AD9] text-[#8C1AD9] hover:bg-[#8C1AD9]/10 inline-flex items-center gap-2"
           >
-            Ver Galería
+            <Grid3X3 size={16} />
+            Browse Gallery
           </Button>
         </div>
 
+        {/* Image Preview */}
         {previewUrl && (
-          <div className="relative w-20 h-20">
+          <div className="relative w-20 h-20 flex-shrink-0">
             <img
               src={previewUrl}
-              alt="Preview"
-              className="w-full h-full object-cover rounded-lg"
+              alt="Input Preview"
+              className="w-full h-full object-cover rounded-lg border-2 border-[#8C1AD9]/50 shadow-lg"
             />
             <button
               onClick={clearSelection}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
             >
               <X size={16} />
             </button>
