@@ -250,7 +250,7 @@ const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
               supabaseImages.map((image) => (
                 <Card
                   key={image.id}
-                  className={`cursor-pointer overflow-hidden hover:opacity-80 transition-all duration-200 hover:scale-105 bg-zinc-800 border-zinc-700 hover:border-[#8C1AD9]/50 ${selectedImageUrl === image.url ? 'ring-2 ring-[#8C1AD9] border-[#8C1AD9]' : ''
+                  className={`cursor-pointer overflow-hidden hover:opacity-80 transition-all duration-200 hover:scale-105 bg-zinc-800 border-zinc-700 hover:border-[#8C1AD9]/50 ${selectedImageUrls[currentSlot] === image.url ? 'ring-2 ring-[#8C1AD9] border-[#8C1AD9]' : ''
                     }`}
                   onClick={() => handleSupabaseImageSelect(image.url)}
                 >
@@ -260,7 +260,7 @@ const KontextImageUploader: React.FC<KontextImageUploaderProps> = ({
                       alt={image.name}
                       className="w-full h-32 object-cover"
                     />
-                    {selectedImageUrl === image.url && (
+                    {selectedImageUrls[currentSlot] === image.url && (
                       <div className="absolute inset-0 bg-[#8C1AD9]/20 flex items-center justify-center">
                         <div className="bg-[#8C1AD9] text-white rounded-full p-2">
                           <ImageIcon size={16} />
