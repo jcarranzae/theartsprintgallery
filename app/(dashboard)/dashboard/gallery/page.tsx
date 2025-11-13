@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ImageIcon, Search, Calendar, X } from 'lucide-react';
@@ -15,7 +15,7 @@ interface ImageData {
   likes: number;
 }
 
-export default function GalleryPage() {
+function GalleryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -195,6 +195,7 @@ export default function GalleryPage() {
     };
 
     loadInitialImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, dateFrom, dateTo]);
 
   // Restaurar scroll al volver del detalle
@@ -239,6 +240,7 @@ export default function GalleryPage() {
         observer.unobserve(currentTarget);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMore, loadingMore, loading, page, searchTerm, dateFrom, dateTo]);
 
   // Handlers de filtros
@@ -274,7 +276,8 @@ export default function GalleryPage() {
   // Actualizar URL cuando searchTerm cambie (después del debounce)
   useEffect(() => {
     updateURL({ search: searchTerm, dateFrom, dateTo });
-  }, [searchTerm, dateFrom, dateTo, updateURL]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, dateFrom, dateTo]);
 
   const handleImageClick = (imageId: number) => {
     // Guardar posición del scroll, filtros actuales y número de imágenes cargadas
@@ -500,4 +503,16 @@ export default function GalleryPage() {
       )}
     </div>
   );
-} 
+}
+
+export default function GalleryPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#8C1AD9]" />
+      </div>
+    }>
+      <GalleryContent />
+    </Suspense>
+  );
+}
