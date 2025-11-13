@@ -13,6 +13,10 @@ export async function GET(
     return NextResponse.json({ error: 'Falta el ID de la imagen' }, { status: 400 });
   }
 
+  // Obtener la polling_url de los query params si está disponible
+  const searchParams = req.nextUrl.searchParams;
+  const pollingUrl = searchParams.get('polling_url');
+
   // Usar las mismas variables de entorno que Kontext (que funcionan)
   const baseUrl = process.env.BFL_BASE_URL || process.env.NEXT_PUBLIC_BFL_BASE_URL;
   const apiKey = process.env.BFL_API_KEY || process.env.NEXT_PUBLIC_BFL_API_KEY;
@@ -26,7 +30,17 @@ export async function GET(
 
   try {
     console.log('Consultando estado de imagen:', id);
-    const response = await axios.get(`${baseUrl}/get_result?id=${id}`, {
+
+    // Usar polling_url si está disponible, sino construir la URL con baseUrl
+    const requestUrl = pollingUrl || `${baseUrl}/get_result?id=${id}`;
+
+    if (pollingUrl) {
+      console.log('✅ Usando polling_url específica de región:', requestUrl);
+    } else {
+      console.log('⚠️ Usando URL genérica (puede causar 404):', requestUrl);
+    }
+
+    const response = await axios.get(requestUrl, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
@@ -57,12 +71,23 @@ export async function GET(
       return NextResponse.json(response);
     }
 
-    if (result.status === 'error') {
+    if (result.status === 'Content Moderated') {
+      console.warn('⚠️ Imagen moderada por filtro de seguridad:', result.details);
+      return NextResponse.json({
+        completed: true,
+        moderated: true,
+        error: 'Content Moderated',
+        details: result.details?.['Moderation Reasons']?.join(', ') || 'Safety Filter'
+      });
+    }
+
+    if (result.status === 'error' || result.status === 'Error') {
       console.error('Error en la generación:', result);
       return NextResponse.json({
+        completed: true,
         error: 'Error en la generación',
         details: result.error || 'Error desconocido'
-      }, { status: 500 });
+      });
     }
 
     return NextResponse.json({

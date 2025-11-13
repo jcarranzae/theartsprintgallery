@@ -48,7 +48,14 @@ export async function POST(req: Request) {
     });
 
     console.log('✅ Respuesta de API:', response.data);
-    return NextResponse.json(response.data);
+
+    // Asegurarse de devolver tanto el id como la polling_url
+    const result = {
+      id: response.data.id,
+      polling_url: response.data.polling_url
+    };
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('❌ Error en request:', error);
 

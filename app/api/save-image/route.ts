@@ -1,59 +1,78 @@
 // app/api/save-image/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { base64ToBuffer, generateFilename } from '@/utils/image';
+import { getUser } from '@/lib/db/queries'; // Sistema de auth JWT personalizado
 
 export async function POST(req: NextRequest) {
   try {
-    const { base64, prompt, imageId } = await req.json();
+    const {
+      base64Data,
+      folder,
+      bucket,
+      table,
+      prompt,
+      originalName,
+      imageId,
+      contentType = 'image/jpeg'
+    } = await req.json();
 
-    // Obtener la sesión del usuario
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
+    // Obtener usuario autenticado usando el sistema JWT personalizado
+    const user = await getUser();
+
+    if (!user) {
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
     }
 
-    const buffer = base64ToBuffer(base64);
-    const filename = generateFilename();
-    const bucket = 'ai-generated-media';
-    const path = `images/${filename}`;
+    console.log('📸 Saving image for user:', user.id);
+
+    // Generar nombre de archivo y path
+    const now = new Date();
+    const extension = contentType === 'video/mp4' ? 'mp4' : 'jpg';
+    const filename = `${originalName.replace(/[^a-zA-Z0-9_-]/g, '_')}_${now.toISOString().replace(/[:.]/g, '-')}.${extension}`;
+    const path = `${folder}/${filename}`;
+
+    // Convertir base64 a buffer
+    const buffer = Buffer.from(base64Data, 'base64');
 
     // 1. Subir al storage
-    const { data: storageData, error: storageError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(path, buffer, {
-        contentType: 'image/jpeg',
+        contentType,
         upsert: false,
       });
 
-    if (storageError) {
-      throw new Error('Error al subir al storage: ' + storageError.message);
+    if (uploadError) {
+      console.error('❌ Upload error:', uploadError);
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
     // 2. Obtener URL pública
-    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(path);
-    const publicUrl = publicUrlData.publicUrl;
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
 
-    // 3. Guardar en la base de datos
-    const { error: dbError } = await supabase.from('images').insert([
-      {
-        url: publicUrl,
-        prompt: prompt,
-        original_name: filename,
-        image_id: imageId,
-        user_id: session.user.id,
-        likes: 0
-      },
-    ]);
+    // 3. Guardar en la base de datos con user_id
+    const { error: insertError } = await supabase.from(table).insert({
+      url: publicUrl,
+      prompt: prompt,
+      original_name: filename,
+      image_id: imageId,
+      user_id: user.id, // ✅ Guardar el user_id del sistema JWT
+      likes: 0,
+    });
 
-    if (dbError) {
-      throw new Error('Error al guardar en la base de datos: ' + dbError.message);
+    if (insertError) {
+      console.error('❌ Database error:', insertError);
+      // Limpiar archivo subido si falla la BD
+      await supabase.storage.from(bucket).remove([path]);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
+
+    console.log('✅ Image saved successfully with user_id:', user.id);
 
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
-    console.error('Error al guardar imagen:', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('❌ Error al guardar imagen:', error);
+    return NextResponse.json({ error: error.message || 'Error desconocido' }, { status: 500 });
   }
 }

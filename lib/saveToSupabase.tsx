@@ -23,36 +23,32 @@ export async function saveToSupabase({
   contentType = 'image/jpeg',
 }: SaveOptions): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    const now = new Date();
-    const extension = contentType === 'video/mp4' ? 'mp4' : 'jpg';
-    const filename = `${originalName.replace(/[^a-zA-Z0-9_-]/g, '_')}_${now.toISOString().replace(/[:.]/g, '-')}.${extension}`;
-    const path = `${folder}/${filename}`;
-
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(path, buffer, {
+    // En lugar de llamar directamente a getUser() aquí (que causa error en el cliente),
+    // llamaremos a un API endpoint que maneje la autenticación
+    const response = await fetch('/api/save-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        base64Data,
+        folder,
+        bucket,
+        table,
+        prompt,
+        originalName,
+        imageId,
         contentType,
-        upsert: false,
-      });
-
-    if (uploadError) return { success: false, error: uploadError.message };
-
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-    const publicUrl = urlData.publicUrl;
-
-    const { error: insertError } = await supabase.from(table).insert({
-      url: publicUrl,
-      prompt: prompt,
-      original_name: filename,
-      image_id: imageId,
-      likes: 0,
+      }),
     });
 
-    if (insertError) return { success: false, error: insertError.message };
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || 'Error al guardar la imagen' };
+    }
 
-    return { success: true, url: publicUrl };
+    const data = await response.json();
+    return { success: true, url: data.url };
   } catch (err: any) {
     return { success: false, error: err.message };
   }

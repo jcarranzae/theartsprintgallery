@@ -26,7 +26,8 @@ export default function FluxGenerator() {
   const [selectedModel, setSelectedModel] = useState(models[0].value);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [prompt, setPrompt] = useState('');
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<string[] | null>(null);
+  const [failedImages, setFailedImages] = useState<{ index: number; reason: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Advanced
@@ -46,6 +47,7 @@ export default function FluxGenerator() {
     if (!prompt) return alert('El prompt es obligatorio');
     setLoading(true);
     setResult(null);
+    setFailedImages([]);
     setShowAdvanced(false);
 
     try {
@@ -67,68 +69,179 @@ export default function FluxGenerator() {
         raw: modelParams[selectedModel]?.raw ? raw : undefined,
       };
 
-      // Timeout de 55 segundos para el fetch inicial
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 55000);
+      // Si es Flux 1.1 Pro Ultra, hacer 4 requests concurrentes
+      const isUltra = selectedModel === 'flux-pro-1.1-ultra';
+      const numRequests = isUltra ? 4 : 1;
 
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+      // Función para generar una imagen individual
+      const generateSingleImage = async (index: number) => {
+        // Crear variaciones en el payload según el índice
+        let modifiedPayload = { ...payload };
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setLoading(false);
-        return alert(`Error: ${errorData.error || 'Error al generar la imagen'}\n${errorData.details || ''}`);
-      }
-
-      const { id } = await response.json();
-      if (!id) {
-        setLoading(false);
-        return alert('Error al generar la imagen, por favor intenta de nuevo.');
-      }
-
-      // Polling para obtener el resultado
-      for (let i = 0; i < 60; i++) {
-        console.log(`📊 Polling intento ${i + 1}/60 para imagen ${id}`);
-        const poll = await fetch(`/api/check-image/${id}`);
-
-        if (!poll.ok) {
-          console.error('❌ Error en polling:', poll.status, poll.statusText);
-          const errorData = await poll.json().catch(() => ({}));
-          console.error('❌ Detalles del error:', errorData);
-          await new Promise((res) => setTimeout(res, 2000));
-          continue;
+        if (isUltra) {
+          switch (index) {
+            case 0:
+              // Imagen 1: Prompt original sin modificar
+              break;
+            case 1:
+              // Imagen 2: Con prompt upsampling activado
+              modifiedPayload.prompt_upsampling = true;
+              break;
+            case 2:
+              // Imagen 3: Variación del prompt - perspectiva alternativa
+              modifiedPayload.prompt = `${prompt}, alternative perspective`;
+              break;
+            case 3:
+              // Imagen 4: Variación del prompt - composición diferente
+              modifiedPayload.prompt = `${prompt}, different composition`;
+              break;
+          }
         }
 
-        const data = await poll.json();
-        console.log('📦 Respuesta del polling:', {
-          completed: data.completed,
-          status: data.status,
-          hasSample: !!data.sample,
-          sampleLength: data.sample?.length
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 55000);
+
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(modifiedPayload),
+          signal: controller.signal,
         });
 
-        if (data.completed && data.sample) {
-          console.log('✅ Imagen completada, estableciendo resultado');
-          setResult(`data:image/jpeg;base64,${data.sample}`);
-          break;
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Error: ${errorData.error || 'Error al generar la imagen'}\n${errorData.details || ''}`);
         }
 
-        if (data.error) {
-          console.error('❌ Error en generación:', data.error, data.details);
-          alert(`Error: ${data.error}\n${data.details || ''}`);
-          break;
+        const { id, polling_url } = await response.json();
+        if (!id) {
+          throw new Error('Error al generar la imagen, por favor intenta de nuevo.');
         }
 
-        await new Promise((res) => setTimeout(res, 2000));
-      }
+        // Polling para obtener el resultado
+        for (let i = 0; i < 60; i++) {
+          console.log(`📊 Polling intento ${i + 1}/60 para imagen ${index + 1} (ID: ${id})`);
+
+          try {
+            // Usar polling_url si está disponible para evitar errores 404
+            const pollEndpoint = polling_url
+              ? `/api/check-image/${id}?polling_url=${encodeURIComponent(polling_url)}`
+              : `/api/check-image/${id}`;
+
+            const poll = await fetch(pollEndpoint);
+
+            // Si es 404, esperar y reintentar (la imagen puede no estar lista aún)
+            if (poll.status === 404) {
+              console.warn(`⚠️ 404 en polling imagen ${index + 1}, reintentando...`);
+              await new Promise((res) => setTimeout(res, 3000));
+              continue;
+            }
+
+            if (!poll.ok) {
+              console.error('❌ Error en polling:', poll.status, poll.statusText);
+              await new Promise((res) => setTimeout(res, 2000));
+              continue;
+            }
+
+            const data = await poll.json();
+
+            if (data.completed && data.sample) {
+              console.log(`✅ Imagen ${index + 1} completada`);
+              return `data:image/jpeg;base64,${data.sample}`;
+            }
+
+            // Manejar contenido moderado
+            if (data.completed && data.moderated) {
+              console.warn(`⚠️ Imagen ${index + 1} bloqueada por filtro de seguridad:`, data.details);
+              throw new Error(`Content blocked by safety filter: ${data.details || 'Safety Filter'}`);
+            }
+
+            if (data.completed && data.error) {
+              console.error('❌ Error en generación:', data.error, data.details);
+              throw new Error(`${data.error}\n${data.details || ''}`);
+            }
+          } catch (error: any) {
+            // Si es un error de red, reintentar
+            if (error.message.includes('fetch') || error.message.includes('network')) {
+              console.warn(`⚠️ Error de red en imagen ${index + 1}, reintentando...`);
+              await new Promise((res) => setTimeout(res, 2000));
+              continue;
+            }
+            // Si es otro tipo de error, lanzarlo
+            throw error;
+          }
+
+          await new Promise((res) => setTimeout(res, 2000));
+        }
+
+        throw new Error(`Timeout esperando imagen ${index + 1}`);
+      };
+
+      // Generar todas las imágenes en paralelo
+      console.log(`🚀 Generando ${numRequests} imagen(es) en paralelo...`);
+      const results = await Promise.allSettled(
+        Array.from({ length: numRequests }, (_, i) => generateSingleImage(i))
+      );
+
+      // Procesar resultados manteniendo las posiciones originales
+      const allImages: (string | null)[] = [];
+      const failedImagesInfo: { index: number; reason: string }[] = [];
+      let successCount = 0;
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          allImages.push(result.value);
+          successCount++;
+        } else {
+          allImages.push(null);
+          const reason = result.status === 'rejected'
+            ? (result.reason?.message || 'Error desconocido')
+            : 'Error desconocido';
+          console.error(`❌ Imagen ${index + 1} falló:`, reason);
+          failedImagesInfo.push({
+            index,
+            reason
+          });
+        }
+      });
 
       setLoading(false);
+
+      if (successCount === 0) {
+        const errorMessages = failedImagesInfo.map(f => `Image ${f.index + 1}: ${f.reason}`).join('\n');
+        return alert(`Error: No se pudo generar ninguna imagen.\n\n${errorMessages}`);
+      }
+
+      // Mostrar información sobre el resultado
+      if (isUltra && failedImagesInfo.length > 0) {
+        const moderatedCount = failedImagesInfo.filter(f => f.reason.includes('safety filter')).length;
+        const errorCount = failedImagesInfo.length - moderatedCount;
+
+        let message = `✅ ${successCount}/${numRequests} images generated successfully`;
+        if (moderatedCount > 0) {
+          message += `\n⚠️ ${moderatedCount} blocked by safety filter`;
+        }
+        if (errorCount > 0) {
+          message += `\n❌ ${errorCount} failed due to errors`;
+        }
+
+        console.log(message);
+        // Mostrar un toast o notificación no intrusiva
+        if (moderatedCount > 0 || errorCount > 0) {
+          setTimeout(() => {
+            alert(message);
+          }, 500);
+        }
+      }
+
+      console.log(`✅ ${successCount}/${numRequests} imágenes completadas exitosamente`);
+
+      // Filtrar solo las imágenes exitosas para mostrar
+      const successfulImages = allImages.filter(img => img !== null) as string[];
+      setResult(successfulImages);
+      setFailedImages(failedImagesInfo);
     } catch (error: any) {
       setLoading(false);
       if (error.name === 'AbortError') {
@@ -231,8 +344,15 @@ export default function FluxGenerator() {
         {loading && (
           <div className="text-center p-6 bg-zinc-900 rounded-lg border border-[#8C1AD9]/30">
             <div className="mb-4">
-              <p className="text-[#8C1AD9] font-semibold text-lg">Generating Image</p>
+              <p className="text-[#8C1AD9] font-semibold text-lg">
+                {selectedModel === 'flux-pro-1.1-ultra'
+                  ? 'Generating 4 Images Concurrently'
+                  : 'Generating Image'}
+              </p>
               <p className="text-gray-300 text-sm mt-1">Model: {getModelName()}</p>
+              {selectedModel === 'flux-pro-1.1-ultra' && (
+                <p className="text-cyan-400 text-sm mt-1">✨ Multiple variations for better results</p>
+              )}
               {imageFile && (
                 <p className="text-cyan-400 text-sm mt-1">🖼️ Using input image</p>
               )}
@@ -249,8 +369,36 @@ export default function FluxGenerator() {
       </div>
 
       {/* Panel derecho - Vista previa */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <ImageViewer imageUrl={result} prompt={prompt} />
+      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
+        {/* Banner de feedback si hay imágenes fallidas */}
+        {failedImages.length > 0 && result && result.length > 0 && (
+          <div className="w-full max-w-2xl bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <h4 className="text-yellow-400 font-semibold mb-1">
+                  Partial Generation Results
+                </h4>
+                <p className="text-yellow-200/80 text-sm mb-2">
+                  {result.length} of 4 images generated successfully. {failedImages.length} failed:
+                </p>
+                <ul className="text-xs text-yellow-200/70 space-y-1">
+                  {failedImages.map((failed) => (
+                    <li key={failed.index}>
+                      • Variation {failed.index + 1}: {
+                        failed.reason.includes('safety filter')
+                          ? '🛡️ Blocked by safety filter'
+                          : `❌ ${failed.reason.substring(0, 50)}...`
+                      }
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ImageViewer imageUrls={result} prompt={prompt} />
       </div>
     </div>
   );

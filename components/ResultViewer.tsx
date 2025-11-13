@@ -106,7 +106,12 @@ export default function ResultViewer({
       let pollingResult: any = null;
 
       while (attempts < 30) {
-        const poll = await fetch(`/api/check-image/${result.id}`);
+        // Usar polling_url si está disponible para evitar errores 404
+        const pollEndpoint = result.polling_url
+          ? `/api/check-image/${result.id}?polling_url=${encodeURIComponent(result.polling_url)}`
+          : `/api/check-image/${result.id}`;
+
+        const poll = await fetch(pollEndpoint);
         const data = await poll.json();
 
         console.log(`Polling intento ${attempts + 1}:`, data);
