@@ -10,17 +10,41 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
     }
 
-    // Obtener parámetros de paginación
+    // Obtener parámetros
     const searchParams = req.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '0');
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = page * limit;
+    const search = searchParams.get('search') || '';
+    const dateFrom = searchParams.get('dateFrom') || '';
+    const dateTo = searchParams.get('dateTo') || '';
 
-    // Obtener imágenes del usuario con paginación
-    const { data: images, error } = await supabase
+    // Construir query base
+    let query = supabase
       .from('images')
-      .select('*')
-      .eq('user_id', user.id)
+      .select('*', { count: 'exact' })
+      .eq('user_id', user.id);
+
+    // Aplicar búsqueda (en nombre O prompt)
+    if (search) {
+      query = query.or(`original_name.ilike.%${search}%,prompt.ilike.%${search}%`);
+    }
+
+    // Aplicar filtro de fecha
+    if (dateFrom && dateTo) {
+      // Rango de fechas
+      query = query
+        .gte('created_at', `${dateFrom}T00:00:00`)
+        .lte('created_at', `${dateTo}T23:59:59`);
+    } else if (dateFrom) {
+      // Solo fecha desde (ese día completo)
+      query = query
+        .gte('created_at', `${dateFrom}T00:00:00`)
+        .lte('created_at', `${dateFrom}T23:59:59`);
+    }
+
+    // Ejecutar query con paginación
+    const { data: images, error, count } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -28,12 +52,6 @@ export async function GET(req: NextRequest) {
       console.error('Error al obtener imágenes:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    // Obtener total de imágenes para saber si hay más
-    const { count } = await supabase
-      .from('images')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
 
     return NextResponse.json({
       images: images || [],

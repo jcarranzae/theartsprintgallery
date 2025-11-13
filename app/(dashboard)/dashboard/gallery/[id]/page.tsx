@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, Edit2, Check, X, Calendar, Hash } from 'lucide-react';
+import { Loader2, ArrowLeft, Edit2, Check, X, Calendar, Hash, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ImageData {
@@ -25,9 +25,18 @@ export default function ImageDetailPage() {
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [returnUrl, setReturnUrl] = useState('/dashboard/gallery');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchImageDetails();
+
+    // Obtener URL de retorno desde sessionStorage
+    const savedReturnUrl = sessionStorage.getItem('gallery-return-url');
+    if (savedReturnUrl) {
+      setReturnUrl(savedReturnUrl);
+    }
   }, [imageId]);
 
   const fetchImageDetails = async () => {
@@ -79,6 +88,38 @@ export default function ImageDetailPage() {
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!image) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/delete-image`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageId: image.id,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Error al eliminar la imagen');
+
+      // Limpiar scroll guardado ya que la imagen ya no existe
+      sessionStorage.removeItem('gallery-scroll');
+      sessionStorage.removeItem('gallery-return-url');
+      sessionStorage.removeItem('gallery-image-count');
+
+      // Redirigir a la galería después de eliminar
+      router.push(returnUrl);
+    } catch (error) {
+      console.error('Error al eliminar imagen:', error);
+      alert('Error al eliminar la imagen');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -100,7 +141,7 @@ export default function ImageDetailPage() {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h2 className="text-2xl font-bold text-white mb-4">Image not found</h2>
         <Link
-          href="/dashboard/gallery"
+          href={returnUrl}
           className="text-[#8C1AD9] hover:text-[#7B16C2] transition-colors"
         >
           ← Back to Gallery
@@ -114,7 +155,7 @@ export default function ImageDetailPage() {
       {/* Header con botón de volver */}
       <div className="mb-6">
         <Link
-          href="/dashboard/gallery"
+          href={returnUrl}
           className="inline-flex items-center gap-2 text-[#8C1AD9] hover:text-[#7B16C2] transition-colors font-semibold"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -133,16 +174,27 @@ export default function ImageDetailPage() {
             />
           </div>
 
-          {/* Botón de descarga */}
-          <a
-            href={image.url}
-            download={image.original_name}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full text-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-900 transition-all"
-          >
-            📥 Download Image
-          </a>
+          {/* Botones de acción */}
+          <div className="space-y-3">
+            <a
+              href={image.url}
+              download={image.original_name}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-900 transition-all"
+            >
+              📥 Download Image
+            </a>
+
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleting}
+              className="w-full px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+            >
+              <Trash2 className="h-5 w-5" />
+              Delete Image
+            </button>
+          </div>
         </div>
 
         {/* Detalles */}
@@ -247,6 +299,47 @@ export default function ImageDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Trash2 className="h-6 w-6 text-red-500" />
+              Delete Image
+            </h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete this image? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteImage}
+                disabled={deleting}
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-5 w-5" />
+                    Yes, Delete
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 px-4 py-3 bg-zinc-700 hover:bg-zinc-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
