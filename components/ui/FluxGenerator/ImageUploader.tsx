@@ -1,201 +1,95 @@
 'use client';
 
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, X, Upload, Grid3X3 } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
+import { useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 
 interface ImageUploaderProps {
-  imageFile: File | null;
-  setImageFile: (file: File | null) => void;
-  selectedImageUrl?: string | null;
-  setSelectedImageUrl?: (url: string | null) => void;
+  images: File[];
+  setImages: (files: File[]) => void;
 }
 
-interface SupabaseImage {
-  name: string;
-  id: string;
-  url: string;
-}
+export default function ImageUploader({ images, setImages }: ImageUploaderProps) {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    // Append new files to existing ones
+    setImages([...images, ...acceptedFiles]);
+  }, [images, setImages]);
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({
-  imageFile,
-  setImageFile,
-  selectedImageUrl,
-  setSelectedImageUrl
-}) => {
-  const [supabaseImages, setSupabaseImages] = useState<SupabaseImage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (selectedImageUrl) {
-      setPreviewUrl(selectedImageUrl);
-    } else if (imageFile) {
-      const url = URL.createObjectURL(imageFile);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [selectedImageUrl, imageFile]);
-
-  useEffect(() => {
-    if (isGalleryOpen) {
-      fetchSupabaseImages();
-    }
-  }, [isGalleryOpen]);
-
-  const fetchSupabaseImages = async () => {
-    try {
-      setLoading(true);
-      let allImages: SupabaseImage[] = [];
-      let offset = 0;
-      const limit = 100;
-
-      while (true) {
-        const { data, error } = await supabase
-          .storage
-          .from('ai-generated-media')
-          .list('images', {
-            limit,
-            offset,
-            sortBy: { column: 'name', order: 'asc' },
-          });
-
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-
-        const images = data.map(file => ({
-          name: file.name,
-          id: file.id,
-          url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/ai-generated-media/images/${file.name}`
-        }));
-
-        allImages = [...allImages, ...images];
-        offset += limit;
-
-        if (data.length < limit) break;
-      }
-
-      setSupabaseImages(allImages);
-    } catch (error) {
-      console.error('Error al cargar imágenes de Supabase:', error);
-    } finally {
-      setLoading(false);
-    }
+  const removeImage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setImageFile(file);
-    if (setSelectedImageUrl) {
-      setSelectedImageUrl(null);
-    }
-  };
-
-  const handleSupabaseImageSelect = (imageUrl: string) => {
-    if (setSelectedImageUrl) {
-      setSelectedImageUrl(imageUrl);
-      setImageFile(null);
-    }
-    setIsGalleryOpen(false);
-  };
-
-  const clearSelection = () => {
-    setImageFile(null);
-    if (setSelectedImageUrl) {
-      setSelectedImageUrl(null);
-    }
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.webp']
+    },
+    multiple: true
+  });
 
   return (
-    <div className="space-y-3">
-      <label className="text-[#8C1AD9] font-semibold text-lg">📸 Input Image (Optional)</label>
+    <div className="w-full space-y-4">
+      <label className="text-[#8C1AD9] font-semibold text-lg">📸 Input Images (Optional)</label>
 
-      <div className="flex items-center gap-3 w-full">
-        <div className="flex-1 space-y-2">
-          {/* Upload Button */}
-          <label
-            className="cursor-pointer bg-gradient-to-r from-[#8C1AD9] to-[#2C2A59] text-white px-4 py-2 rounded-lg font-semibold hover:from-[#7B16C2] hover:to-[#1C228C] transition-all duration-300 hover:scale-105 shadow-lg inline-flex items-center gap-2"
-            style={{
-              boxShadow: "0 0 12px 2px rgba(140, 26, 217, 0.3)",
-            }}
-          >
-            <Upload size={16} />
-            {imageFile || selectedImageUrl ? 'Change Image' : 'Upload Image'}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </label>
-
-          {/* Gallery Button */}
-          <Button
-            variant="outline"
-            onClick={() => setIsGalleryOpen(true)}
-            className="ml-2 border-[#8C1AD9] text-[#8C1AD9] hover:bg-[#8C1AD9]/10 inline-flex items-center gap-2"
-          >
-            <Grid3X3 size={16} />
-            Browse Gallery
-          </Button>
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+          ${isDragActive
+            ? 'border-[#8C1AD9] bg-[#8C1AD9]/10'
+            : 'border-gray-600 hover:border-[#8C1AD9] hover:bg-zinc-900'
+          }`}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center gap-2">
+          <Upload className={`w-8 h-8 ${isDragActive ? 'text-[#8C1AD9]' : 'text-gray-400'}`} />
+          <p className="text-sm text-gray-300">
+            {isDragActive ? (
+              "Drop images here..."
+            ) : (
+              "Drag & drop images here, or click to select"
+            )}
+          </p>
+          <p className="text-xs text-gray-500">
+            Supports multiple images (PNG, JPG, WEBP)
+          </p>
         </div>
-
-        {/* Image Preview */}
-        {previewUrl && (
-          <div className="relative w-20 h-20 flex-shrink-0">
-            <img
-              src={previewUrl}
-              alt="Input Preview"
-              className="w-full h-full object-cover rounded-lg border-2 border-[#8C1AD9]/50 shadow-lg"
-            />
-            <button
-              onClick={clearSelection}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
       </div>
 
-      <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Galería de Imágenes</DialogTitle>
-          </DialogHeader>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-            {loading ? (
-              <div className="col-span-full flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-[#8C1AD9]" />
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {images.map((file, index) => (
+            <div key={index} className="relative group bg-zinc-900 rounded-lg border border-gray-700 overflow-hidden">
+              <div className="aspect-square relative">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={`Upload ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeImage(index);
+                    }}
+                    className="p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Image Index Badge */}
+                <div className="absolute top-2 left-2 bg-[#8C1AD9] text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                  Image {index + 1}
+                </div>
               </div>
-            ) : (
-              supabaseImages.map((image) => (
-                <Card
-                  key={image.id}
-                  className={`cursor-pointer overflow-hidden hover:opacity-80 transition-opacity ${selectedImageUrl === image.url ? 'ring-2 ring-[#8C1AD9]' : ''
-                    }`}
-                  onClick={() => handleSupabaseImageSelect(image.url)}
-                >
-                  <img
-                    src={image.url}
-                    alt={image.name}
-                    className="w-full h-32 object-cover"
-                  />
-                </Card>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              <div className="p-2 text-xs text-gray-400 truncate">
+                {file.name}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
-
-export default ImageUploader;
+}

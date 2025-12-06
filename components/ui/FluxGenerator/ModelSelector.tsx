@@ -32,6 +32,16 @@ const models: Model[] = [
     value: 'flux-pro-1.1-ultra',
     description: 'Ultra high quality with maximum detail and precision'
   },
+  {
+    label: 'FLUX.2 [pro]',
+    value: 'flux-2-pro',
+    description: 'Next generation pro model with advanced details and color precision'
+  },
+  {
+    label: 'FLUX.2 [flex]',
+    value: 'flux-2-flex',
+    description: 'Flexible next-gen model with broad range of capabilities'
+  },
 ];
 
 export default function ModelSelector({ value, onChange }: ModelSelectorProps) {

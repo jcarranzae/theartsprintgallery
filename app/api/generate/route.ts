@@ -28,6 +28,8 @@ export async function POST(req: Request) {
     'flux-pro': 'flux-pro',
     'flux-pro-1.1': 'flux-pro-1.1',
     'flux-pro-1.1-ultra': 'flux-pro-1.1-ultra',
+    'flux-2-pro': 'flux-2-pro',
+    'flux-2-flex': 'flux-2-flex',
   };
 
   const endpoint = `${baseUrl}/${modelPaths[model]}`;

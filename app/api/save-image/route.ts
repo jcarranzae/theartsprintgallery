@@ -1,6 +1,6 @@
 // app/api/save-image/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getUser } from '@/lib/db/queries'; // Sistema de auth JWT personalizado
 
 export async function POST(req: NextRequest) {
@@ -53,12 +53,21 @@ export async function POST(req: NextRequest) {
 
     // 3. Guardar en la base de datos con user_id
     const { error: insertError } = await supabase.from(table).insert({
-      url: publicUrl,
-      prompt: prompt,
-      original_name: filename,
-      image_id: imageId,
-      user_id: user.id, // ✅ Guardar el user_id del sistema JWT
+      bucket_path: path,
+      file_name: filename,
+      file_type: 'IMAGE',
+      mime_type: contentType,
+      size_in_bytes: buffer.length,
+      user_id: user.id,
+      image_id: imageId || null,
       likes: 0,
+      original_name: originalName,
+      prompt: prompt,
+      url: publicUrl,
+      metadata: {
+        source: 'flux',
+        generated_at: new Date().toISOString()
+      }
     });
 
     if (insertError) {
