@@ -64,5 +64,10 @@
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.9",
     "tsx": "^4.19.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "form-data": "^4.0.0"
+    }
   }
 }
