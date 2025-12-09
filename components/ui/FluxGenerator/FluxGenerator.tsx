@@ -8,7 +8,7 @@ import PromptInput from './PromptInput';
 import AdvancedSettings from './AdvancedSettings';
 import ImageViewer from './ImageViewer';
 
-const modelParams: Record<string, { aspect_ratio?: boolean; negative_prompt?: boolean; raw?: boolean; width?: boolean; height?: boolean; steps?: boolean; guidance?: boolean; prompt_upsampling?: boolean; safety_tolerance?: boolean; output_quality?: boolean }> = {
+const modelParams: Record<string, { aspect_ratio?: boolean; negative_prompt?: boolean; raw?: boolean; width?: boolean; height?: boolean; steps?: boolean; guidance?: boolean; prompt_upsampling?: boolean; safety_tolerance?: boolean; output_quality?: boolean; seed?: boolean }> = {
   'flux-dev': { negative_prompt: true, width: true, height: true, steps: true, guidance: true, seed: true },
   'flux-pro': { width: true, height: true, steps: true, guidance: true, safety_tolerance: true, output_quality: true },
   'flux-pro-1.1': { negative_prompt: true, width: true, height: true, steps: true, guidance: true, safety_tolerance: true, output_quality: true, prompt_upsampling: true, aspect_ratio: true },
