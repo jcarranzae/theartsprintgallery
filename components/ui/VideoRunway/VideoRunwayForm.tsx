@@ -20,7 +20,7 @@ export default function VideoRunwayForm() {
   const [ratio, setRatio] = useState<'16:9' | '9:16' | '4:3' | '3:4' | '1:12' | '1:9'>('16:9');
   const [model] = useState<'runway/gen4_turbo'>('runway/gen4_turbo');
   const [seed, setSeed] = useState<number | ''>('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,9 +28,10 @@ export default function VideoRunwayForm() {
   const [taskId, setTaskId] = useState<string>('');
 
   // Convertir imagen a data URL
-  const handleImageFileChange = async (file: File | null) => {
-    setImageFile(file);
-    if (file) {
+  const handleImagesChange = async (files: File[]) => {
+    setImages(files);
+    if (files.length > 0) {
+      const file = files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
         setImageUrl(reader.result as string);
@@ -80,7 +81,7 @@ export default function VideoRunwayForm() {
 
       const data = await response.json();
       console.log('Data Devuelta del POST: ', data);
-      
+
       if (!response.ok) {
         throw new Error(`Error al iniciar la generación del video: ${data.message || 'Error desconocido'}`);
       }
@@ -147,7 +148,7 @@ export default function VideoRunwayForm() {
             <label className="block mb-2 text-[#8C1AD9] font-semibold text-lg">
               Imagen inicial (primer frame)
             </label>
-            <ImageUploader imageFile={imageFile} setImageFile={handleImageFileChange} />
+            <ImageUploader images={images} setImages={handleImagesChange} />
           </div>
           <div>
             <label className="block mb-2 text-[#8C1AD9] font-semibold text-lg">
